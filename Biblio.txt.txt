@@ -1,0 +1,19 @@
+
+
+https://python.sdv.univ-paris-diderot.fr/20_tkinter/
+- Explication de la création objet
+- Présentation de canvas pour les objets graphiques
+- Interception d'évennements souris, clavier.
+- Extension de Tkinter nommée ttk, réimplémentant la plupart des widgets de base de Tkinter et qui en propose de nouveaux (Combobox, Notebook, Progressbar, Separator, Sizegrip et Treeview). 
+
+https://docs.python.org/3/library/tk.html
+- Référence tkinter
+
+
+https://docs.python.org/3/library/tkinter.scrolledtext.html
+- Scroll text widget
+https://docs.python.org/3/library/dialog.html#module-tkinter.filedialog
+- file selection Dialog
+
+http://tkinter.fdex.eu/doc/frw.html
+- Explications sur les Frames.
