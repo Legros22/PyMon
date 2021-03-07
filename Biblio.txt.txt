@@ -12,6 +12,9 @@ https://docs.python.org/3/library/tk.html
 
 https://docs.python.org/3/library/tkinter.scrolledtext.html
 - Scroll text widget
+cf. https://github.com/python/cpython/tree/3.9/Lib/tkinter
+
+
 https://docs.python.org/3/library/dialog.html#module-tkinter.filedialog
 - file selection Dialog
 
