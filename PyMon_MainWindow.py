@@ -10,7 +10,8 @@ import sys
 
 root = Tk()
 root.title('PyMon for ZIOT')
-root.geometry('{}x{}'.format(460, 350))
+#root.geometry('{}x{}'.format(460, 350))
+root.geometry('{}x{}'.format(700, 350))
 
 # set default color
 LABEL_BCKGROUND ="cyan"
@@ -60,13 +61,21 @@ def changeConnStatus():
         ConnStatus_label.config(fg="black", font='Helvetica 10')
         ConnStatus = 1
     elif ConnStatus==1:
-        ConnStatus_txt.set("Connected")
+        ConnStatus_txt.set("Connected "+Port_StrVar.get())
         ConnStatus_label.config(fg="green", font='Helvetica 11 bold')
         ConnStatus = 0
     else: #Default state
         ConnStatus_txt.set("----")
         ConnStatus_label.config(fg="black", font='Helvetica 10 bold')
         ConnStatus = 0
+
+
+    # Output cmd to TRACE
+##    output_area.configure(state ='normal')
+##    output_area. insert(END,"# "+Port_StrVar.get()+'\n','CmdColor')
+##    output_area.tag_config('CmdColor', foreground='blue')
+##    output_area.see("end")
+##    output_area.configure(state ='disabled')
 
 
 ConnStatus_txt = StringVar()
@@ -80,10 +89,15 @@ Conn_bouton["fg"] = "black"
 
 
 # -------------- IP widget --------------------
-IP_label = Label(left_frame, text='IP address :',background = LABEL_BCKGROUND)
-IP_entry = Entry(left_frame, background=ENTRY_COLOR);
-MASK_label = Label(left_frame, text='IP mask : ',background = LABEL_BCKGROUND)
-MASK_entry = Entry(left_frame, background=ENTRY_COLOR);
+IP_StrVar   = StringVar(left_frame, value='10.10.11.254')
+IP_label    = Label(left_frame, text='IP address :',background = LABEL_BCKGROUND)
+IP_entry    = Entry(left_frame, textvariable = IP_StrVar, background=ENTRY_COLOR);
+MASK_StrVar = StringVar(left_frame, value='255.255.255.0')
+MASK_label  = Label(left_frame, text='IP mask : ',background = LABEL_BCKGROUND)
+MASK_entry  = Entry(left_frame, textvariable = MASK_StrVar, background=ENTRY_COLOR)
+Port_StrVar = StringVar(left_frame, value='49491')
+Port_label  =  Label(left_frame, text='IP port : ',background = LABEL_BCKGROUND)
+Port_entry  =  Entry(left_frame, textvariable = Port_StrVar, background=ENTRY_COLOR);
 
 
 ##entry_L = Entry(Right_frame, background="orange")
@@ -95,6 +109,8 @@ IP_label.grid(row=3, column=0)
 IP_entry.grid(row=3, column=1)
 MASK_label.grid(row=4, column=0)
 MASK_entry.grid(row=4, column=1)
+Port_label.grid(row=5, column=0)
+Port_entry.grid(row=5, column=1)
 
 # create the center widgets
 top_frame.grid_rowconfigure(0, weight=1)
