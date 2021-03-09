@@ -10,7 +10,6 @@ import sys
 
 root = Tk()
 root.title('PyMon for ZIOT')
-#root.geometry('{}x{}'.format(460, 350))
 root.geometry('{}x{}'.format(700, 350))
 
 # set default color
@@ -20,11 +19,11 @@ ENTRY_COLOR = "pink"
 
 
 # Logging features
-now = datetime.now()
 log_separator=' ; '
 log_file_name="MonLog.txt"
 
 def MonLog(TraceLine):
+    now = datetime.now()
     timeStamp = now.strftime("%d/%m/%Y"+log_separator+"%H:%M:%S")
     with open(log_file_name, 'a') as LogFile:  # Use file to refer to the file object
         LogFile.write(timeStamp+log_separator+TraceLine+'\n')
