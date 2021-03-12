@@ -10,7 +10,7 @@ import sys
 
 root = Tk()
 root.title('PyMon for ZIOT')
-root.geometry('{}x{}'.format(700, 350))
+root.geometry('{}x{}'.format(800, 350))
 
 # set default color
 LABEL_BCKGROUND ="cyan"
@@ -50,66 +50,6 @@ btm_frame.grid(row=1, sticky="ew")
 # create the widgets for the top frame
 # =====================================
 
-# -------------- Connexion widget --------------------
-
-
-def changeConnStatus():
-    global ConnStatus
-    if ConnStatus==0:
-        ConnStatus_txt.set("Disconnected")
-        ConnStatus_label.config(fg="black", font='Helvetica 10')
-        ConnStatus = 1
-    elif ConnStatus==1:
-        ConnStatus_txt.set("Connected "+Port_StrVar.get())
-        ConnStatus_label.config(fg="green", font='Helvetica 11 bold')
-        ConnStatus = 0
-    else: #Default state
-        ConnStatus_txt.set("----")
-        ConnStatus_label.config(fg="black", font='Helvetica 10 bold')
-        ConnStatus = 0
-
-
-    # Output cmd to TRACE
-##    output_area.configure(state ='normal')
-##    output_area. insert(END,"# "+Port_StrVar.get()+'\n','CmdColor')
-##    output_area.tag_config('CmdColor', foreground='blue')
-##    output_area.see("end")
-##    output_area.configure(state ='disabled')
-
-
-ConnStatus_txt = StringVar()
-ConnStatus_label = Label(left_frame, textvariable=ConnStatus_txt,background = LABEL_BCKGROUND)
-ConnStatus = -1;
-changeConnStatus()
-
-Conn_bouton = Button(left_frame, text="Connect", command=changeConnStatus)
-Conn_bouton["fg"] = "black"
-
-
-
-# -------------- IP widget --------------------
-IP_StrVar   = StringVar(left_frame, value='10.10.11.254')
-IP_label    = Label(left_frame, text='IP address :',background = LABEL_BCKGROUND)
-IP_entry    = Entry(left_frame, textvariable = IP_StrVar, background=ENTRY_COLOR);
-MASK_StrVar = StringVar(left_frame, value='255.255.255.0')
-MASK_label  = Label(left_frame, text='IP mask : ',background = LABEL_BCKGROUND)
-MASK_entry  = Entry(left_frame, textvariable = MASK_StrVar, background=ENTRY_COLOR)
-Port_StrVar = StringVar(left_frame, value='49491')
-Port_label  =  Label(left_frame, text='IP port : ',background = LABEL_BCKGROUND)
-Port_entry  =  Entry(left_frame, textvariable = Port_StrVar, background=ENTRY_COLOR);
-
-
-##entry_L = Entry(Right_frame, background="orange")
-
-# layout the widgets in the top frame
-Conn_bouton.grid(row=0, column=0)
-ConnStatus_label.grid(row=0, column=1)
-IP_label.grid(row=3, column=0)
-IP_entry.grid(row=3, column=1)
-MASK_label.grid(row=4, column=0)
-MASK_entry.grid(row=4, column=1)
-Port_label.grid(row=5, column=0)
-Port_entry.grid(row=5, column=1)
 
 # create the center widgets
 top_frame.grid_rowconfigure(0, weight=1)
@@ -138,60 +78,135 @@ LogSel = Checkbutton(Right_frame, textvariable=LogCommTxt,variable=LogComm, onva
 LogSel.grid(row=1,column=0)
 
 
-#COMMENT_label = Label(Right_frame, text='TRACES',background = LABEL_BCKGROUND)
-#COMMENT_label.grid(row=1, column=1)
-
-
-##output_area = scrolledtext.ScrolledText(Right_frame,
-##                                      wrap = root.WORD,
-##                                      width = 40,
-##                                      height = 10,
-##                                      font = ("Times New Roman",15))
+# Output Trace Window
+# --------------------
 output_area = scrolledtext.ScrolledText(Right_frame,
-                                      width = 40,
+                                      width = 70,
                                       height = 10,
-                                      font = ("Courier",12))
+                                      font = ("Courier",10))
 
 output_area.grid(row=2, pady = 10, padx = 10)
 # Making the text read only
 #output_area.configure(state ='disabled')
 
+MSG_TYPE_ACTION  = 0
+MSG_TYPE_SEND    = 1
+MSG_TYPE_RECEIVE = 2
+
+# Output cmd to TRACE
+def output_send(msg, msg_type):
+    if LogComm.get():
+        MonLog(msg)                    #log the cmd received
+    if msg_type==MSG_TYPE_ACTION:
+        output_area.configure(state ='normal')
+        output_area. insert(END,"#"+msg+'\n','ACTION_COLOR')
+        output_area.tag_config('ACTION_COLOR', foreground='green')
+        output_area.see("end")
+        output_area.configure(state ='disabled')
+    elif msg_type==MSG_TYPE_SEND:
+        output_area.configure(state ='normal')
+        output_area. insert(END,"> "+msg+'\n','SEND_COLOR')
+        output_area.tag_config('SEND_COLOR', foreground='blue')
+        output_area.see("end")
+        output_area.configure(state ='disabled')
+    elif msg_type==MSG_TYPE_RECEIVE:
+        output_area.configure(state ='normal')
+        output_area. insert(END,msg+'\n','RECEIVE_COLOR')
+        output_area.tag_config('RECEIVE_COLOR', foreground='black')
+        output_area.see("end")
+        output_area.configure(state ='disabled')
+    else:
+        output_area.configure(state ='normal')
+        output_area. insert(END,msg+'\n','ERROR_COLOR')
+        output_area.tag_config('ERROR_COLOR', foreground='grey')
+        output_area.see("end")
+        output_area.configure(state ='disabled')
+
+
+# input enter Window
+# --------------------
 
 def input_area_enter(event):
     global LogComm
     CmdLine = input_area.get(1.0, END) # input cmd from read
     CmdLine = CmdLine.replace("\n","") # supress \n for start of line
     input_area.delete(1.0,END)         # delete input zone
-    if LogComm.get():
-        MonLog(CmdLine)                    #log the cmd received
-
     # Output cmd to TRACE
-    output_area.configure(state ='normal')
-    output_area. insert(END,"> "+CmdLine+'\n','CmdColor')
-    output_area.tag_config('CmdColor', foreground='blue')
-    output_area.see("end")
-    output_area.configure(state ='disabled')
+    output_send(CmdLine, MSG_TYPE_SEND)
 
 
 
 input_area = scrolledtext.ScrolledText(Right_frame,
-                                      width = 40,
+                                      width = 70,
                                       height = 2,
-                                      font = ("Courier",12))
+                                      font = ("Courier",10))
 
 input_area.grid(row=3, pady = 10, padx = 10)
 input_area.bind('<Return>',input_area_enter)
 
 
+# -------------- Connexion widget --------------------
+
+
+def changeConnStatus():
+    global ConnStatus
+    if ConnStatus==0:
+        ConnStatus_txt.set("Disconnected")
+        ConnStatus_label.config(fg="black", font='Helvetica 10')
+        ConnStatus = 1
+    elif ConnStatus==1:
+        ConnStatus_txt.set("Connected "+Port_StrVar.get())
+        ConnStatus_label.config(fg="green", font='Helvetica 11 bold')
+        ConnStatus = 0
+    else: #Default state
+        ConnStatus_txt.set("----")
+        ConnStatus_label.config(fg="black", font='Helvetica 10 bold')
+        ConnStatus = 0
+    # Output cmd to TRACE
+    output_send(Port_StrVar.get(), MSG_TYPE_ACTION)
+
+
+
+
+# -------------- IP widget --------------------
+IP_StrVar   = StringVar(left_frame, value='10.10.11.254')
+IP_label    = Label(left_frame, text='IP address :',background = LABEL_BCKGROUND)
+IP_entry    = Entry(left_frame, textvariable = IP_StrVar, background=ENTRY_COLOR);
+MASK_StrVar = StringVar(left_frame, value='255.255.255.0')
+MASK_label  = Label(left_frame, text='IP mask : ',background = LABEL_BCKGROUND)
+MASK_entry  = Entry(left_frame, textvariable = MASK_StrVar, background=ENTRY_COLOR)
+Port_StrVar = StringVar(left_frame, value='49491')
+Port_label  =  Label(left_frame, text='IP port : ',background = LABEL_BCKGROUND)
+Port_entry  =  Entry(left_frame, textvariable = Port_StrVar, background=ENTRY_COLOR);
+
+ConnStatus_txt = StringVar()
+ConnStatus_label = Label(left_frame, textvariable=ConnStatus_txt,background = LABEL_BCKGROUND)
+ConnStatus_txt.set("----")
+ConnStatus_label.config(fg="black", font='Helvetica 10 bold')
+ConnStatus = 0
+Conn_bouton = Button(left_frame, text="Connect", command=changeConnStatus)
+Conn_bouton["fg"] = "black"
+
+
+##entry_L = Entry(Right_frame, background="orange")
+
+# layout the widgets in the top frame
+Conn_bouton.grid(row=0, column=0)
+ConnStatus_label.grid(row=0, column=1)
+IP_label.grid(row=3, column=0)
+IP_entry.grid(row=3, column=1)
+MASK_label.grid(row=4, column=0)
+MASK_entry.grid(row=4, column=1)
+Port_label.grid(row=5, column=0)
+Port_entry.grid(row=5, column=1)
+
+
+
+
+
+
 # Placing cursor in the text area
 output_area.focus()
-##stext = init.ScrolledText(Right_frame, bg='white', height=10)
-####stext.insert(END, __doc__)
-##stext.insert(END, "toto est a la plage")
-##stext.pack(fill=BOTH, side=LEFT, expand=True)
-##stext.focus_set()
-##stext.mainloop()
-
 
 
 root.mainloop()
