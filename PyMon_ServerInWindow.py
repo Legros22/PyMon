@@ -151,25 +151,25 @@ input_area.bind('<Return>',input_area_enter)
 
 
 # --------------- TCP server thread -------------------
-q = Queue()
 
 def MyTcpServer(in_q):
-    #global ConnStatus
     ii=0
     RunRequest = 0
     while 1:
         if in_q.empty()==False:
             RunRequest = in_q.get()
-            print('-------------------\n')
-            print(RunRequest);
-            print('-------------------\n')
-            time.sleep(1)
+            if RunRequest==1:
+                output_send("Server wait for Connect (IP="+IP_StrVar.get()+")",MSG_TYPE_ACTION)
+            else:
+                output_send("Server pause",MSG_TYPE_ACTION)
+            time.sleep(0.5)
         if RunRequest==1:
             ii += 1
-            print(str(ii)+'\r\n');
+            output_send(str(ii),MSG_TYPE_SEND)
             time.sleep(0.1)
 
 
+q = Queue()
 t1 = Thread(target = MyTcpServer, args =(q, ))
 t1.start()
 
@@ -181,23 +181,20 @@ def changeConnStatus():
     if ConnStatus==0:
         ConnStatus_txt.set("Disconnected")
         ConnStatus_label.config(fg="black", font='Helvetica 10')
-        q.put(0)
+        q.put(ConnStatus)
         ConnStatus = 1
     elif ConnStatus==1:
         ConnStatus_txt.set("Connected "+Port_StrVar.get())
         ConnStatus_label.config(fg="green", font='Helvetica 11 bold')
+        q.put(ConnStatus)
         ConnStatus = 0
-        #requestedConnectionThread = threading.Thread(target=MyTcpServer,args=(ConnStatus,))
-        #requestedConnectionThread.start()
-        q.put(1)
-
     else: #Default state
         ConnStatus_txt.set("----")
         ConnStatus_label.config(fg="black", font='Helvetica 10 bold')
         ConnStatus = 0
-        q.put(0)
+        q.put(ConnStatus)
     # Output cmd to TRACE
-    output_send(Port_StrVar.get(), MSG_TYPE_ACTION)
+    # output_send(Port_StrVar.get(), MSG_TYPE_ACTION)
 
 
 
@@ -217,7 +214,7 @@ ConnStatus_txt = StringVar()
 ConnStatus_label = Label(left_frame, textvariable=ConnStatus_txt,background = LABEL_BCKGROUND)
 ConnStatus_txt.set("----")
 ConnStatus_label.config(fg="black", font='Helvetica 10 bold')
-ConnStatus = 0
+ConnStatus = 1
 Conn_bouton = Button(left_frame, text="Connect", command=changeConnStatus)
 Conn_bouton["fg"] = "black"
 
