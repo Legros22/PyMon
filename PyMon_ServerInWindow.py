@@ -151,33 +151,16 @@ input_area.bind('<Return>',input_area_enter)
 
 
 
-# --------------- TCP server thread -------------------
-
-def MyTcpServer0(in_q):
-    ii=0
-    RunRequest = 0
-    while 1:
-        if in_q.empty()==False:
-            RunRequest = in_q.get()
-            if RunRequest==1:
-                output_send("Server wait for Connect (IP="+IP_StrVar.get()+")",MSG_TYPE_ACTION)
-            else:
-                output_send("Server pause",MSG_TYPE_ACTION)
-            time.sleep(0.5)
-        if RunRequest==1:
-            ii += 1
-            output_send(str(ii),MSG_TYPE_SEND)
-            time.sleep(0.1)
+# --------------- TCP server threads -------------------
 
 
 def ProcessReveivedMsg(client):
     try:
         while 1:
-            print('()')
             MyFrame = client.recv(1024)
             if not MyFrame:
-                print ('Client leaves')
-                break #sortie du while
+                output_send('Client quit',MSG_TYPE_ACTION)
+                break #quit while
             else:
                 #convert the "byte" received to a string
                 FrameStr = MyFrame.decode('UTF-8')
@@ -187,89 +170,68 @@ def ProcessReveivedMsg(client):
                 #filter received string with just empty string
                 #(an empty string always follow a string...)
                 if (len(FrameStr)!=0):
-                    #output_send('Reception de:' +FrameStr+ '  len='+str(len(FrameStr)),RECEIVE_COLOR)
                     #display the received msg
                     output_send(FrameStr,MSG_TYPE_RECEIVE)
     except:
         MyEnd = 0
-        #print("except")
         # except is used to catch the error when client.rev is waiting a message
         # and client is closed by client.close()
-    print('(END)')
 
 
 def MyTcpServer(in_q):
     ii=0
     ServerState = 0
     ServerRequest = 0
-    restart_serveur = 1
-    ProcessRMsg_Created = 0
     while 1:
+        #Check if a command is received from main task
         if in_q.empty()==False:
             ServerRequest = in_q.get()
 
-        if (ProcessRMsg_Created):
-            if (t2.is_alive()==False):
-                print('Client is dead')
-                client.close()
-                #t2.join()
-                ProcessRMsg_Created = 0
-                serveur.close()
-                ServerState = 0
-                ServerRequest = 1
-
+        #if server is disabled, check if it has to be launched
         if ServerState==0:
-            if (ServerState != ServerRequest):  # Request server connexion
+            if (ServerRequest==1):  # Request server connexion
                 # bind socket to server IP and Port
                 Port = int(Port_StrVar.get())
-                serveur = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                serveur.bind((IP_StrVar.get(), Port))
+                server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                server.bind((IP_StrVar.get(), Port))
                 output_send('Server bind to '+IP_StrVar.get(),MSG_TYPE_ACTION)
                 # Wait for client
-                serveur.listen(1)
-                client, adresseClient = serveur.accept()
+                server.listen(1)
+                client, adresseClient = server.accept()
                 addr,port = adresseClient
                 txt='Connection of '+addr+', port='+str(port)
                 output_send(txt,MSG_TYPE_ACTION)
-                ServerState = ServerRequest
-                t2 = Thread(target = ProcessReveivedMsg, args =(client, ))
-                t2.start()
-                ProcessRMsg_Created = 1
+                ServerState = 1
+                Thread_ProcessReveivedMsg = Thread(target = ProcessReveivedMsg, args =(client, ))
+                Thread_ProcessReveivedMsg.start()
                 output_send('Receiving thread is started',MSG_TYPE_ACTION)
 
+        #if server is enabled, check if it has to be stoped
         if ServerState==1:
-            if (ServerState != ServerRequest):  # Request server connexion
-                if (ServerState != ServerRequest): #request server end
-                    output_send('Fermeture normale de la connexion avec le client.',MSG_TYPE_ACTION)
-                    client.close()
-                    t2.join()
-                    ProcessRMsg_Created = 0
+            if (ServerRequest==0):  # Request server connexion
+                output_send('server request to stop => Close client socket.',MSG_TYPE_ACTION)
+                client.close()
+                #note : This will cause "ProcessReveivedMsg" exception
+                Thread_ProcessReveivedMsg.join()
+                server.close()
+                ServerState = 0
 
-                    output_send('Arret normal du serveur.',MSG_TYPE_ACTION)
-                    serveur.close()
-                    ServerState = ServerRequest
-
-
+        #if server is supposed to be launched, check if client manager is still alive
+        if ServerState==1:
+            if (Thread_ProcessReveivedMsg.is_alive()==False):
+                output_send('thread managing Client is dead',MSG_TYPE_ACTION)
+                client.close()
+                server.close()
+                ServerState = 0
+                ServerRequest = 1
         time.sleep(1)
         ii += 1
         output_send(str(ii),MSG_TYPE_SEND)
 
 
-
-
-
-
-
-
 q = Queue()
-t1 = Thread(target = MyTcpServer, args =(q, ))
-t1.start()
-
-
-
-
-
-
+Thread_MyTcpServer = Thread(target = MyTcpServer, args =(q, ))
+Thread_MyTcpServer.start()
 
 # -------------- Connexion widget --------------------
 
