@@ -200,47 +200,55 @@ def ProcessReveivedMsg(client):
 
 def MyTcpServer(in_q):
     ii=0
-    ServerState = -1
+    ServerState = 0
     ServerRequest = 0
     restart_serveur = 1
     ProcessRMsg_Created = 0
     while 1:
         if in_q.empty()==False:
             ServerRequest = in_q.get()
-            if ServerRequest==1:
-                if (ServerState != ServerRequest):  # Request server connexion
-                    # bind socket to server IP and Port
-                    Port = int(Port_StrVar.get())
-                    serveur = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    serveur.bind((IP_StrVar.get(), Port))
-                    output_send('Server bind to '+IP_StrVar.get(),MSG_TYPE_ACTION)
-                    # Wait for client
-                    serveur.listen(1)
-                    client, adresseClient = serveur.accept()
-                    addr,port = adresseClient
-                    txt='Connection of '+addr+', port='+str(port)
-                    output_send(txt,MSG_TYPE_ACTION)
-                    ServerState = ServerRequest
-                    t2 = Thread(target = ProcessReveivedMsg, args =(client, ))
-                    t2.start()
-                    ProcessRMsg_Created = 1
-                    output_send('Receiving thread is started',MSG_TYPE_ACTION)
-
-            else:
-                if (ServerState == 1):
-                    if (ServerState != ServerRequest): #request server end
-                        output_send('Fermeture normale de la connexion avec le client.',MSG_TYPE_ACTION)
-                        client.close()
-                        t2.join()
-                        ProcessRMsg_Created = 0
-
-                        output_send('Arret normal du serveur.',MSG_TYPE_ACTION)
-                        serveur.close()
-                        ServerState = ServerRequest
 
         if (ProcessRMsg_Created):
             if (t2.is_alive()==False):
-                    print('Client is dead')
+                print('Client is dead')
+                client.close()
+                #t2.join()
+                ProcessRMsg_Created = 0
+                serveur.close()
+                ServerState = 0
+                ServerRequest = 1
+
+        if ServerState==0:
+            if (ServerState != ServerRequest):  # Request server connexion
+                # bind socket to server IP and Port
+                Port = int(Port_StrVar.get())
+                serveur = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                serveur.bind((IP_StrVar.get(), Port))
+                output_send('Server bind to '+IP_StrVar.get(),MSG_TYPE_ACTION)
+                # Wait for client
+                serveur.listen(1)
+                client, adresseClient = serveur.accept()
+                addr,port = adresseClient
+                txt='Connection of '+addr+', port='+str(port)
+                output_send(txt,MSG_TYPE_ACTION)
+                ServerState = ServerRequest
+                t2 = Thread(target = ProcessReveivedMsg, args =(client, ))
+                t2.start()
+                ProcessRMsg_Created = 1
+                output_send('Receiving thread is started',MSG_TYPE_ACTION)
+
+        if ServerState==1:
+            if (ServerState != ServerRequest):  # Request server connexion
+                if (ServerState != ServerRequest): #request server end
+                    output_send('Fermeture normale de la connexion avec le client.',MSG_TYPE_ACTION)
+                    client.close()
+                    t2.join()
+                    ProcessRMsg_Created = 0
+
+                    output_send('Arret normal du serveur.',MSG_TYPE_ACTION)
+                    serveur.close()
+                    ServerState = ServerRequest
+
 
         time.sleep(1)
         ii += 1
