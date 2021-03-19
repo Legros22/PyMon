@@ -8,6 +8,7 @@ from datetime import datetime
 import time
 from queue import Queue
 from threading import Thread
+import socket
 
 import logging
 import sys
@@ -152,7 +153,7 @@ input_area.bind('<Return>',input_area_enter)
 
 # --------------- TCP server thread -------------------
 
-def MyTcpServer(in_q):
+def MyTcpServer0(in_q):
     ii=0
     RunRequest = 0
     while 1:
@@ -169,9 +170,98 @@ def MyTcpServer(in_q):
             time.sleep(0.1)
 
 
+def ProcessReveivedMsg(client):
+    try:
+        while 1:
+            print('()')
+            MyFrame = client.recv(1024)
+            if not MyFrame:
+                print ('Client leaves')
+                break #sortie du while
+            else:
+                #convert the "byte" received to a string
+                FrameStr = MyFrame.decode('UTF-8')
+                FrameStr = FrameStr.replace("\n","") # supress \n for start of line
+                FrameStr = FrameStr.replace("\r","") # supress \r for start of line
+
+                #filter received string with just empty string
+                #(an empty string always follow a string...)
+                if (len(FrameStr)!=0):
+                    #output_send('Reception de:' +FrameStr+ '  len='+str(len(FrameStr)),RECEIVE_COLOR)
+                    #display the received msg
+                    output_send(FrameStr,MSG_TYPE_RECEIVE)
+    except:
+        MyEnd = 0
+        #print("except")
+        # except is used to catch the error when client.rev is waiting a message
+        # and client is closed by client.close()
+    print('(END)')
+
+
+def MyTcpServer(in_q):
+    ii=0
+    ServerState = -1
+    ServerRequest = 0
+    restart_serveur = 1
+    ProcessRMsg_Created = 0
+    while 1:
+        if in_q.empty()==False:
+            ServerRequest = in_q.get()
+            if ServerRequest==1:
+                if (ServerState != ServerRequest):  # Request server connexion
+                    # bind socket to server IP and Port
+                    Port = int(Port_StrVar.get())
+                    serveur = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    serveur.bind((IP_StrVar.get(), Port))
+                    output_send('Server bind to '+IP_StrVar.get(),MSG_TYPE_ACTION)
+                    # Wait for client
+                    serveur.listen(1)
+                    client, adresseClient = serveur.accept()
+                    addr,port = adresseClient
+                    txt='Connection of '+addr+', port='+str(port)
+                    output_send(txt,MSG_TYPE_ACTION)
+                    ServerState = ServerRequest
+                    t2 = Thread(target = ProcessReveivedMsg, args =(client, ))
+                    t2.start()
+                    ProcessRMsg_Created = 1
+                    output_send('Receiving thread is started',MSG_TYPE_ACTION)
+
+            else:
+                if (ServerState == 1):
+                    if (ServerState != ServerRequest): #request server end
+                        output_send('Fermeture normale de la connexion avec le client.',MSG_TYPE_ACTION)
+                        client.close()
+                        t2.join()
+                        ProcessRMsg_Created = 0
+
+                        output_send('Arret normal du serveur.',MSG_TYPE_ACTION)
+                        serveur.close()
+                        ServerState = ServerRequest
+
+        if (ProcessRMsg_Created):
+            if (t2.is_alive()==False):
+                    print('Client is dead')
+
+        time.sleep(1)
+        ii += 1
+        output_send(str(ii),MSG_TYPE_SEND)
+
+
+
+
+
+
+
+
 q = Queue()
 t1 = Thread(target = MyTcpServer, args =(q, ))
 t1.start()
+
+
+
+
+
+
 
 # -------------- Connexion widget --------------------
 
@@ -200,13 +290,15 @@ def changeConnStatus():
 
 
 # -------------- IP widget --------------------
-IP_StrVar   = StringVar(left_frame, value='10.10.11.254')
+ADRESSE = '192.168.1.52'
+PORT = 6789
+IP_StrVar   = StringVar(left_frame, value=ADRESSE)
 IP_label    = Label(left_frame, text='IP address :',background = LABEL_BCKGROUND)
 IP_entry    = Entry(left_frame, textvariable = IP_StrVar, background=ENTRY_COLOR);
 MASK_StrVar = StringVar(left_frame, value='255.255.255.0')
 MASK_label  = Label(left_frame, text='IP mask : ',background = LABEL_BCKGROUND)
 MASK_entry  = Entry(left_frame, textvariable = MASK_StrVar, background=ENTRY_COLOR)
-Port_StrVar = StringVar(left_frame, value='49491')
+Port_StrVar = StringVar(left_frame, value=str(PORT))
 Port_label  =  Label(left_frame, text='IP port : ',background = LABEL_BCKGROUND)
 Port_entry  =  Entry(left_frame, textvariable = Port_StrVar, background=ENTRY_COLOR);
 
