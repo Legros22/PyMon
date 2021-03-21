@@ -14,7 +14,7 @@ import logging
 import sys
 
 root = Tk()
-root.title('PyMon Server (ZIOT)')
+root.title('PyMon CLient (ZIOT)')
 root.geometry('{}x{}'.format(800, 350))
 
 # set default color
@@ -138,6 +138,7 @@ def input_area_enter(event):
     input_area.delete(1.0,END)         # delete input zone
     # Output cmd to TRACE
     output_send(CmdLine, MSG_TYPE_SEND)
+    MyTCP_SendToServer(CmdLine)
 
 
 
@@ -151,7 +152,10 @@ input_area.bind('<Return>',input_area_enter)
 
 
 
-# --------------- TCP server threads -------------------
+# --------------- TCP client mamagement -------------------
+
+ClientState = 0
+#client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
 def ProcessReveivedMsg(client):
@@ -178,9 +182,9 @@ def ProcessReveivedMsg(client):
         # and client is closed by client.close()
 
 
-def MyTcpServer(in_q):
+def MyTcpClient(in_q):
     ii=0
-    ServerState = 0
+    ClientState = 0
     ServerRequest = 0
     while 1:
         #Check if a command is received from main task
@@ -188,74 +192,123 @@ def MyTcpServer(in_q):
             ServerRequest = in_q.get()
 
         #if server is disabled, check if it has to be launched
-        if ServerState==0:
+        if ClientState==0:
             if (ServerRequest==1):  # Request server connexion
                 # bind socket to server IP and Port
                 Port = int(Port_StrVar.get())
-                server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                server.bind((IP_StrVar.get(), Port))
-                output_send('Server bind to '+IP_StrVar.get(),MSG_TYPE_ACTION)
-                # Wait for client
-                server.listen(1)
-                client, adresseClient = server.accept()
-                addr,port = adresseClient
-                txt='Connection of '+addr+', port='+str(port)
+                client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                client.connect((IP_StrVar.get(),int(Port_StrVar.get())))
+                txt='Connection to '+IP_StrVar.get()+', port='+Port_StrVar.get()
                 output_send(txt,MSG_TYPE_ACTION)
-                ServerState = 1
-                Thread_ProcessReveivedMsg = Thread(target = ProcessReveivedMsg, args =(client, ))
-                Thread_ProcessReveivedMsg.start()
-                output_send('Receiving thread is started',MSG_TYPE_ACTION)
+                ClientState = 1
+##                #Thread_ProcessReveivedMsg = Thread(target = ProcessReveivedMsg, args =(client, ))
+##                #Thread_ProcessReveivedMsg.start()
+##                #output_send('Receiving thread is started',MSG_TYPE_ACTION)
 
         #if server is enabled, check if it has to be stoped
-        if ServerState==1:
+        if ClientState==1:
             if (ServerRequest==0):  # Request server connexion
-                output_send('server request to stop => Close client socket.',MSG_TYPE_ACTION)
+                output_send('Disconnect',MSG_TYPE_ACTION)
                 client.close()
                 #note : This will cause "ProcessReveivedMsg" exception
-                Thread_ProcessReveivedMsg.join()
-                server.close()
-                ServerState = 0
+##                Thread_ProcessReveivedMsg.join()
+                ClientState = 0
 
-        #if server is supposed to be launched, check if client manager is still alive
-        if ServerState==1:
-            if (Thread_ProcessReveivedMsg.is_alive()==False):
-                output_send('thread managing Client is dead',MSG_TYPE_ACTION)
-                client.close()
-                server.close()
-                ServerState = 0
-                ServerRequest = 1
+##        #if server is supposed to be launched, check if client manager is still alive
+##        if ClientState==1:
+##            if (Thread_ProcessReveivedMsg.is_alive()==False):
+##                output_send('thread managing Client is dead',MSG_TYPE_ACTION)
+##                client.close()
+##                server.close()
+##                ClientState = 0
+##                ServerRequest = 1
         time.sleep(1)
-        #display activity
-        #ii += 1
-        #output_send(str(ii),MSG_TYPE_SEND)
+        ii += 1
+        output_send(str(ii),MSG_TYPE_SEND)
+        if(ClientState==1):
+            client.send(('hello +'+str(ii)).encode())
 
 
-q = Queue()
-Thread_MyTcpServer = Thread(target = MyTcpServer, args =(q, ))
-Thread_MyTcpServer.start()
+##q = Queue()
+##Thread_MyTcpClient = Thread(target = MyTcpClient, args =(q, ))
+##Thread_MyTcpClient.start()
+
+
+
+def MyTCP_ConnectToServer():
+    global ClientState
+    global client
+    #manage client connection to the server
+    Port = int(Port_StrVar.get())
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        client.connect((IP_StrVar.get(),int(Port_StrVar.get())))
+        txt='Connection to '+IP_StrVar.get()+', port='+Port_StrVar.get()
+        output_send(txt,MSG_TYPE_ACTION)
+        ClientState = 1
+        #widget management
+        ConnStatus_txt.set("Connected")
+        ConnStatus_label.config(fg="green", font='Helvetica 11 bold')
+
+    except:
+        output_send("Server refuse connection",MSG_TYPE_ACTION)
+        ClientState = 0
+        #widget management
+        ConnStatus_txt.set("Disconnected")
+        ConnStatus_label.config(fg="black", font='Helvetica 10')
+
+def MyTCP_DisConnectToServer():
+    global ClientState
+    global client
+    try:
+        #manage client connection to the server
+        output_send('Disconnect',MSG_TYPE_ACTION)
+        client.close()
+        #note : This will cause "ProcessReveivedMsg" exception
+    ##  Thread_ProcessReveivedMsg.join()
+        ClientState = 0
+    except:
+        ClientState = 0
+    #manage widget
+    ConnStatus==0
+    ConnStatus_txt.set("Disconnected")
+    ConnStatus_label.config(fg="black", font='Helvetica 10')
+
+def MyTCP_SendToServer(strMessage):
+    global ClientState
+    global client
+    if(ClientState==1):
+        try:
+            client.send(strMessage.encode())
+        except:
+            output_send("Can't send to Server",MSG_TYPE_ACTION)
+            MyTCP_DisConnectToServer()
+    else:
+        output_send("Connect to Server before to send message.",MSG_TYPE_ACTION)
 
 # -------------- Connexion widget --------------------
 
 
 def changeConnStatus():
-    global ConnStatus
-    if ConnStatus==0:
-        ConnStatus_txt.set("Disconnected")
-        ConnStatus_label.config(fg="black", font='Helvetica 10')
-        q.put(ConnStatus)
-        ConnStatus = 1
-    elif ConnStatus==1:
-        ConnStatus_txt.set("Connected "+Port_StrVar.get())
-        ConnStatus_label.config(fg="green", font='Helvetica 11 bold')
-        q.put(ConnStatus)
-        ConnStatus = 0
+    global ClientState
+    if ClientState==0:
+        MyTCP_ConnectToServer()
+         #q.put(ConnStatus)
+        #ConnStatus = 1
+    elif ClientState==1:
+
+        #ConnStatus_txt.set("Disconnected")
+        #ConnStatus_label.config(fg="black", font='Helvetica 10')
+        #q.put(ConnStatus)
+        MyTCP_DisConnectToServer()
+        #ConnStatus = 0
     else: #Default state
         ConnStatus_txt.set("----")
         ConnStatus_label.config(fg="black", font='Helvetica 10 bold')
-        ConnStatus = 0
-        q.put(ConnStatus)
-    # Output cmd to TRACE
-    # output_send(Port_StrVar.get(), MSG_TYPE_ACTION)
+        ClientState==0
+        #ConnStatus = 0
+        #ClientState = 0
+        #q.put(ConnStatus)
 
 
 
