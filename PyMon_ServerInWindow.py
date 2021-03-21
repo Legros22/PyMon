@@ -138,7 +138,7 @@ def input_area_enter(event):
     input_area.delete(1.0,END)         # delete input zone
     # Output cmd to TRACE
     output_send(CmdLine, MSG_TYPE_SEND)
-
+    MyTCP_SendToClient(CmdLine);
 
 
 input_area = scrolledtext.ScrolledText(Right_frame,
@@ -154,10 +154,10 @@ input_area.bind('<Return>',input_area_enter)
 # --------------- TCP server threads -------------------
 
 
-def ProcessReveivedMsg(client):
+def ProcessReveivedMsg(OneClient):
     try:
         while 1:
-            MyFrame = client.recv(1024)
+            MyFrame = OneClient.recv(1024)
             if not MyFrame:
                 output_send('Client quit',MSG_TYPE_ACTION)
                 break #quit while
@@ -172,6 +172,7 @@ def ProcessReveivedMsg(client):
                 if (len(FrameStr)!=0):
                     #display the received msg
                     output_send(FrameStr,MSG_TYPE_RECEIVE)
+                    client.send((FrameStr.upper()).encode())
     except:
         MyEnd = 0
         # except is used to catch the error when client.rev is waiting a message
@@ -179,6 +180,7 @@ def ProcessReveivedMsg(client):
 
 
 def MyTcpServer(in_q):
+    global client
     ii=0
     ServerState = 0
     ServerRequest = 0
@@ -228,6 +230,18 @@ def MyTcpServer(in_q):
         #display activity
         #ii += 1
         #output_send(str(ii),MSG_TYPE_SEND)
+
+
+
+def MyTCP_SendToClient(strMessage):
+    global client
+    print("request to send " + strMessage)
+    try:
+        client.send(strMessage.encode())
+    except:
+        output_send("Can't send to client",MSG_TYPE_ACTION)
+    #else:
+    #    output_send("Warning : no client connected, can't send answer...",MSG_TYPE_ACTION)
 
 
 q = Queue()

@@ -160,6 +160,7 @@ ClientState = 0
 
 def ProcessReveivedMsg(client):
     try:
+        output_send('in ProcessReveivedMsg()',MSG_TYPE_ACTION)
         while 1:
             MyFrame = client.recv(1024)
             if not MyFrame:
@@ -242,10 +243,16 @@ def MyTCP_ConnectToServer():
     Port = int(Port_StrVar.get())
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
+        #client connection to server
         client.connect((IP_StrVar.get(),int(Port_StrVar.get())))
         txt='Connection to '+IP_StrVar.get()+', port='+Port_StrVar.get()
         output_send(txt,MSG_TYPE_ACTION)
         ClientState = 1
+        #Launch thread to receive data
+        Thread_ProcessReveivedMsg = Thread(target = ProcessReveivedMsg, args =(client, ))
+        Thread_ProcessReveivedMsg.start()
+        output_send('Receiving thread is started',MSG_TYPE_ACTION)
+
         #widget management
         ConnStatus_txt.set("Connected")
         ConnStatus_label.config(fg="green", font='Helvetica 11 bold')
@@ -265,7 +272,7 @@ def MyTCP_DisConnectToServer():
         output_send('Disconnect',MSG_TYPE_ACTION)
         client.close()
         #note : This will cause "ProcessReveivedMsg" exception
-    ##  Thread_ProcessReveivedMsg.join()
+        Thread_ProcessReveivedMsg.join()
         ClientState = 0
     except:
         ClientState = 0
