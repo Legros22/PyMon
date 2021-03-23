@@ -276,6 +276,9 @@ def changeConnStatus():
 
 # -------------- IP widget --------------------
 ADRESSE = '192.168.1.52'
+hostname = socket.gethostname()
+local_ip = socket.gethostbyname(hostname)
+ADRESSE  = local_ip
 PORT = 6789
 IP_StrVar   = StringVar(left_frame, value=ADRESSE)
 IP_label    = Label(left_frame, text='IP address :',background = LABEL_BCKGROUND)
