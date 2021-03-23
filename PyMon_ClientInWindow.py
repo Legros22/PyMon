@@ -34,39 +34,24 @@ def MonLog(TraceLine):
         LogFile.write(timeStamp+log_separator+TraceLine+'\n')
 
 
+
+left_frame = Frame(root, bg=LABEL_BCKGROUND, width=150, height=50, pady=3)
+left_frame.grid(row=0, column=0, sticky="nw")
+
+
 # create all of the main containers
-top_frame = Frame(root, bg=LABEL_BCKGROUND, width=450, height=50, pady=3)
-btm_frame = Frame(root, bg='white', width=450, height=45, pady=3)
+root.grid_columnconfigure(1, weight=1)
+root.grid_rowconfigure(0, weight=1)
 
-left_frame = Frame(top_frame, bg=LABEL_BCKGROUND, width=150, height=50, pady=3)
-##left_frame = top_frame
-Right_frame = Frame(top_frame, bg='green', width=300, height=50, pady=3)
+Right_frame = Frame(root, bg='green', width=300, height=50, pady=3)
+Right_frame.grid(row=0, column=1,sticky="nsew")
+Right_frame.grid_columnconfigure(0, weight=1)
+Right_frame.grid_rowconfigure(1, weight=1)
 
-# layout all of the main containers
-root.grid_rowconfigure(1, weight=1)
-root.grid_columnconfigure(0, weight=1)
-
-top_frame.grid(row=0, sticky="nsew")
-left_frame.grid(row=0, column=0)
-Right_frame.grid(row=0, column=1)
-btm_frame.grid(row=1, sticky="ew")
-
-
-# create the widgets for the top frame
+# create the widgets for right frame
 # =====================================
 
 
-# create the center widgets
-top_frame.grid_rowconfigure(0, weight=1)
-top_frame.grid_columnconfigure(1, weight=1)
-
-##ctr_left = Frame(center, bg='blue', width=100, height=190)
-##ctr_mid = Frame(center, bg='yellow', width=250, height=190, padx=3, pady=3)
-##ctr_right = Frame(center, bg='green', width=100, height=190, padx=3, pady=3)
-##
-##ctr_left.grid(row=0, column=0, sticky="ns")
-##ctr_mid.grid(row=0, column=1, sticky="nsew")
-##ctr_right.grid(row=0, column=2, sticky="ns")
 
 # Logger selection
 # --------------------
@@ -80,7 +65,7 @@ LogComm = IntVar()
 LogCommTxt = StringVar()
 LogCommTxt.set('Log OFF')
 LogSel = Checkbutton(Right_frame, textvariable=LogCommTxt,variable=LogComm, onvalue=1, offvalue=0, command=ToggleLogFile)
-LogSel.grid(row=1,column=0)
+LogSel.grid(row=0,column=0)
 
 
 # Output Trace Window
@@ -90,7 +75,10 @@ output_area = scrolledtext.ScrolledText(Right_frame,
                                       height = 10,
                                       font = ("Courier",10))
 
-output_area.grid(row=2, pady = 10, padx = 10)
+output_area.grid(row=1, column=0, pady = 10, padx = 10, sticky="nsew")
+output_area.grid_columnconfigure(0, weight=1)
+output_area.grid_rowconfigure(0, weight=1)
+
 # Making the text read only
 #output_area.configure(state ='disabled')
 
@@ -147,7 +135,10 @@ input_area = scrolledtext.ScrolledText(Right_frame,
                                       height = 2,
                                       font = ("Courier",10))
 
-input_area.grid(row=3, pady = 10, padx = 10)
+input_area.grid(row=2, column=0, pady = 10, padx = 10, sticky="ew")
+output_area.grid_columnconfigure(0, weight=1)
+
+#input_area.grid(row=3, pady = 10, padx = 10)
 input_area.bind('<Return>',input_area_enter)
 
 
