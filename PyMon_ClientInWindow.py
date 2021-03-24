@@ -13,6 +13,8 @@ import socket
 import logging
 import sys
 
+import json
+
 root = Tk()
 root.title('PyMon CLient (ZIOT)')
 root.geometry('{}x{}'.format(800, 350))
@@ -29,9 +31,108 @@ LABEL_FOREGROUND = WIN_FORGROUNG
 ENTRY_COLOR     = CMD_BACKGROUND #"pink"
 
 
-# Logging features
-log_separator=' ; '
-log_file_name="MonLog.txt"
+## Manage software config in json file
+## ------------------------------------
+
+##ConfData0 = {
+##    "Ethernet": {
+##        "ADDRESS" : "192.168.1.52",
+##        "MASK"    : "255.255.0.0",
+##        "PORT"    : "6789"
+##        },
+##    "Log":{
+##        "LogFileName":"MonLog.txt",
+##        "LogDelimiter":";"
+##        }
+##    }
+##
+##MyJSON = json.dumps(ConfData0, indent=4)
+##
+##with open("MonZiot.json", "w") as jsonfile:
+##    jsonfile.write(MyJSON)
+##    print("Write successful")
+
+try:
+    with open("MonZiot.json", "r") as jsonfile:
+        ConfData = json.load(jsonfile)
+        print("Read successful")
+except:
+    ConfData={}
+
+
+Update_ConfData = False
+
+if "Ethernet" in ConfData:
+#-------------------------
+    print(" ** Ethernet y est")
+else:
+    ConfData["Ethernet"]={}
+    Update_ConfData = True
+    print("create Ethernet section ")
+
+if "ADDRESS" in ConfData["Ethernet"]:
+    ADRESSE = ConfData["Ethernet"]["ADDRESS"]
+    print("ADDR = "+ADRESSE)
+else:
+    ADRESSE = "192.168.1.52"
+    ConfData["Ethernet"]["ADDRESS"]=ADRESSE
+    Update_ConfData = True
+    print("create ADDR = "+ADRESSE)
+if "MASK" in ConfData["Ethernet"]:
+    MASK = ConfData["Ethernet"]["MASK"]
+    print("MASK = "+MASK)
+else:
+    MASK = "255.255.0.0"
+    ConfData["Ethernet"]["MASK"]=MASK
+    Update_ConfData = True
+    print("create MASK = "+MASK)
+if "PORT" in ConfData["Ethernet"]:
+    PORT = int(ConfData["Ethernet"]["PORT"])
+    Update_ConfData = True
+    print("PORT = "+str(PORT))
+else:
+    PORT = 6789
+    ConfData["Ethernet"]["PORT"]=str(PORT)
+    print("create PORT = "+str(PORT))
+
+if "Logger" in ConfData:
+#-------------------------
+    print(" ** Logger y est")
+else:
+    ConfData["Logger"]={}
+    Update_ConfData = True
+    print("create Logger section ")
+
+if "LogFileName" in ConfData["Logger"]:
+    log_file_name = ConfData["Logger"]["LogFileName"]
+    print("LogFileName = "+log_file_name)
+else:
+    log_file_name = "MyLog.txt"
+    ConfData["Logger"]["LogFileName"]=log_file_name
+    Update_ConfData = True
+    print("create LogFileName = "+log_file_name)
+
+if "LogDelimiter" in ConfData["Logger"]:
+    log_separator = ConfData["Logger"]["LogDelimiter"]
+    print("LogDelimiter = "+MASK)
+else:
+    log_separator = ";"
+    ConfData["Logger"]["LogDelimiter"]=log_separator
+    Update_ConfData = True
+    print("create LogDelimiter = "+log_separator)
+
+
+if Update_ConfData:
+    MyJSON = json.dumps(ConfData, indent=4, sort_keys=True)
+    with open("MonZiot.json", "w") as jsonfile:
+        jsonfile.write(MyJSON)
+        print("ReWrite successful")
+
+
+
+
+
+
 
 def MonLog(TraceLine):
     now = datetime.now()

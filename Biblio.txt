@@ -20,3 +20,6 @@ https://docs.python.org/3/library/dialog.html#module-tkinter.filedialog
 
 http://tkinter.fdex.eu/doc/frw.html
 - Explications sur les Frames.
+
+https://tutswiki.com/read-write-json-config-file-in-python/
+- Config file en json
