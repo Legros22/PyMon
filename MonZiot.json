@@ -1,8 +1,8 @@
 {
     "Ethernet": {
-        "ADDRESS": "192.168.1.52",
+        "ADDRESS": "192.168.1.11",
         "MASK": "255.255.0.0",
-        "PORT": "6789"
+        "PORT": "4101"
     },
     "Logger": {
         "LogDelimiter": ";",

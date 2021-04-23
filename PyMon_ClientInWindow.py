@@ -71,13 +71,13 @@ else:
     print("create Ethernet section ")
 
 if "ADDRESS" in ConfData["Ethernet"]:
-    ADRESSE = ConfData["Ethernet"]["ADDRESS"]
-    print("ADDR = "+ADRESSE)
+    ADDRESS = ConfData["Ethernet"]["ADDRESS"]
+    print("ADDR = "+ADDRESS)
 else:
-    ADRESSE = "192.168.1.52"
-    ConfData["Ethernet"]["ADDRESS"]=ADRESSE
+    ADDRESS = "192.168.1.11"
+    ConfData["Ethernet"]["ADDRESS"]=ADDRESS
     Update_ConfData = True
-    print("create ADDR = "+ADRESSE)
+    print("create ADDR = "+ADDRESS)
 if "MASK" in ConfData["Ethernet"]:
     MASK = ConfData["Ethernet"]["MASK"]
     print("MASK = "+MASK)
@@ -114,7 +114,7 @@ else:
 
 if "LogDelimiter" in ConfData["Logger"]:
     log_separator = ConfData["Logger"]["LogDelimiter"]
-    print("LogDelimiter = "+MASK)
+    print("LogDelimiter = "+log_separator)
 else:
     log_separator = ";"
     ConfData["Logger"]["LogDelimiter"]=log_separator
@@ -166,13 +166,13 @@ Right_frame.grid_rowconfigure(1, weight=1)
 # --------------------
 def ToggleLogFile ():
     if LogComm.get():
-        LogCommTxt.set("Log ON (\""+log_file_name+"\")")
+        LogCommTxt.set("Log file (ON:\""+log_file_name+"\")")
     else:
-        LogCommTxt.set('Log OFF')
+        LogCommTxt.set('Log file (OFF)')
 
 LogComm = IntVar()
 LogCommTxt = StringVar()
-LogCommTxt.set('Log OFF')
+LogCommTxt.set('Log file (OFF)')
 LogSel = Checkbutton(Right_frame,
                     fg = CMD_BACKGROUND, bg = WIN_BACKGROUND,
                     activebackground=WIN_BACKGROUND, activeforeground=CMD_BACKGROUND,
@@ -283,8 +283,8 @@ def ProcessReveivedMsg(client):
             else:
                 #convert the "byte" received to a string
                 FrameStr = MyFrame.decode('UTF-8')
-                FrameStr = FrameStr.replace("\n","") # supress \n for start of line
-                FrameStr = FrameStr.replace("\r","") # supress \r for start of line
+                rameStr = FrameStr.replace("\n","") # supress \n for start of line
+                #FrameStr = FrameStr.replace("\r","") # supress \r for start of line
 
                 #filter received string with just empty string
                 #(an empty string always follow a string...)
@@ -435,9 +435,9 @@ def changeConnStatus():
 
 
 # -------------- IP widget --------------------
-ADRESSE = '192.168.1.52'
-PORT = 6789
-IP_StrVar   = StringVar(left_frame, value=ADRESSE)
+#ADDRESS = '192.168.1.52'
+#PORT = 6789
+IP_StrVar   = StringVar(left_frame, value=ADDRESS)
 IP_label    = Label(left_frame, text='IP address :',background = LABEL_BACKGROUND, fg = LABEL_FOREGROUND)
 IP_entry    = Entry(left_frame, textvariable = IP_StrVar, background=ENTRY_COLOR);
 MASK_StrVar = StringVar(left_frame, value='255.255.255.0')
