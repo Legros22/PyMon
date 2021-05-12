@@ -23,3 +23,11 @@ http://tkinter.fdex.eu/doc/frw.html
 
 https://tutswiki.com/read-write-json-config-file-in-python/
 - Config file en json
+
+
+Pour le tracer de courbe : 
+- Importer numpy et matplotlib avec pip.
+C:\Users\Philippe\AppData\Local\Programs\Python\Python38\Scripts\pip.exe install -U numpy
+C:\Users\Philippe\AppData\Local\Programs\Python\Python38\Scripts\pip.exe install -U matplotlib
+bon tutoriel : 
+https://courspython.com/introduction-courbes.html
