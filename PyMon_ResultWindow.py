@@ -81,11 +81,36 @@ class ResultWindow:
         # Output value graphical window
         # --------------------------
 
-        fig = Figure(figsize=(5, 4), dpi=100)
-        t = np.arange(0, 3, .01)
-        fig.add_subplot(111).plot(t, 2 * np.sin(2 * np.pi * t))
+        #define of array to plot
 
-        canvas = FigureCanvasTkAgg(fig, master=Right_frame)  # A tk.DrawingArea.
+        self.graph_data=np.array([[0,0]])   # Double crochet pour tableau à 2 dimensions
+        self.graph_data=np.concatenate((self.graph_data, [[1,2]]), axis=0)
+
+##        >>> graph_data
+##        array([[0, 0]])
+##        >>> graph_data = np.concatenate((graph_data, [[1,2]]), axis=0)
+##        >>> graph_data = np.concatenate((graph_data, [[2,10]]), axis=0)
+##        >>> graph_data
+##        array([[ 0,  0],
+##               [ 1,  2],
+##               [ 2, 10]])
+##        >>> np.delete(graph_data,axis=0,obj=1)
+##        array([[ 0,  0],
+##               [ 2, 10]])
+##        >>> np.delete(graph_data,axis=1,obj=1)
+##        array([[0],
+##               [1],
+##               [2]])
+
+
+
+        self.fig = Figure(figsize=(5, 4), dpi=100)
+        x=np.delete(self.graph_data,axis=1,obj=1);
+        y=np.delete(self.graph_data,axis=1,obj=0);
+
+        self.fig.add_subplot(111).plot(x,y)
+
+        canvas = FigureCanvasTkAgg(self.fig, master=Right_frame)  # A tk.DrawingArea.
         canvas.draw()
         canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
 
@@ -122,6 +147,18 @@ class ResultWindow:
         self.output_area.tag_config('ACTION_COLOR', foreground='green')
         self.output_area.see("end")
         self.output_area.configure(state ='disabled')
+
+        #add value to graph_data
+        NextIndex =np.delete(self.graph_data,axis=1,obj=1).size
+        self.graph_data=np.concatenate((self.graph_data, [[NextIndex, value]]), axis=0)
+        #redraw graph
+        x=np.delete(self.graph_data,axis=1,obj=1);
+        y=np.delete(self.graph_data,axis=1,obj=0);
+        ##self.fig.add_subplot(111).plot(x,y)
+        self.fig.add_subplot(111).remove()
+        self.fig.add_subplot(111).plot(x,y)
+
+
 
 
 def main():

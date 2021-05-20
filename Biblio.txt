@@ -31,3 +31,8 @@ C:\Users\Philippe\AppData\Local\Programs\Python\Python38\Scripts\pip.exe install
 C:\Users\Philippe\AppData\Local\Programs\Python\Python38\Scripts\pip.exe install -U matplotlib
 bon tutoriel : 
 https://courspython.com/introduction-courbes.html
+Important : redraw sans le module animation...
+https://courspython.com/animation-matplotlib.html#animation-avec-effacement
+
+-Présentation qui semble interessante de matplotlib
+https://www.eduba.school/blog/introduction-a-la-visualisation-de-donnees-avec-python-et-matplotlib
