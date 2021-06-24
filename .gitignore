@@ -129,3 +129,7 @@ dmypy.json
 .pyre/
 
 MonLog.txt
+MyLog.txt
+divers/*
+toto*.*
+*.json

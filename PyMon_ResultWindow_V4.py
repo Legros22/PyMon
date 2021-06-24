@@ -22,9 +22,16 @@ from matplotlib.backends.backend_tkagg import (
 # Implement the default Matplotlib key bindings.
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
-
+import matplotlib.pyplot as plt
+import time
 
 import numpy as np
+
+from MyScope_V2 import Scope
+
+from queue import Queue
+
+from PyMon_Logger import Logger
 
 
 # set default color
@@ -42,13 +49,15 @@ BUTTON_DEF_WIDTH = 10
 ENTRY_DEF_WIDTH = 15
 
 
+plt.ion()
+
 
 class ResultWindow:
 
     def __init__(self,rootWindow):
         win = Toplevel(rootWindow)
         win.title('PyMon Display Result')
-        win.geometry('{}x{}'.format(500, 500))
+        win.geometry('{}x{}'.format(700, 700))
 
 
         left_frame = Frame(win,highlightbackground=WIN_HIGH_LIGHT, highlightthickness=1,
@@ -79,44 +88,35 @@ class ResultWindow:
         self.output_area.grid_rowconfigure(0, weight=1)
 
         # Output value graphical window
-        # --------------------------
+        # ------------------------------
 
-        #define of array to plot
+        # Add logger object
+##        Log_frame = Frame(Right_frame,highlightbackground=WIN_HIGH_LIGHT, highlightthickness=1,
+##                            bg=LABEL_BACKGROUND, width=160, height=50, pady=3)
+##        Log_frame.grid(row=0, column=0, sticky="n")
 
-        self.graph_data=np.array([[0,0]])   # Double crochet pour tableau à 2 dimensions
-        self.graph_data=np.concatenate((self.graph_data, [[1,2]]), axis=0)
+##        self.logger = Logger(Log_frame)
+##        self.logger = Logger(Right_frame)
 
-##        >>> graph_data
-##        array([[0, 0]])
-##        >>> graph_data = np.concatenate((graph_data, [[1,2]]), axis=0)
-##        >>> graph_data = np.concatenate((graph_data, [[2,10]]), axis=0)
-##        >>> graph_data
-##        array([[ 0,  0],
-##               [ 1,  2],
-##               [ 2, 10]])
-##        >>> np.delete(graph_data,axis=0,obj=1)
-##        array([[ 0,  0],
-##               [ 2, 10]])
-##        >>> np.delete(graph_data,axis=1,obj=1)
-##        array([[0],
-##               [1],
-##               [2]])
+##        Fig_frame = Frame(Right_frame,highlightbackground=WIN_HIGH_LIGHT, highlightthickness=1,
+##                            bg=LABEL_BACKGROUND, pady=3)
+##        Fig_frame.grid(row=1, column=0, sticky="n")
 
+        self.fig, self.ax = plt.subplots()
 
+        self.scope = Scope(self.fig, self.ax, max_points = 20)   #create Scope object
 
-        self.fig = Figure(figsize=(5, 4), dpi=100)
-        x=np.delete(self.graph_data,axis=1,obj=1);
-        y=np.delete(self.graph_data,axis=1,obj=0);
-
-        self.fig.add_subplot(111).plot(x,y)
-
+        # Set self.fig in the Right_frame
         canvas = FigureCanvasTkAgg(self.fig, master=Right_frame)  # A tk.DrawingArea.
         canvas.draw()
         canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
 
+        # Add tool bar to the Right_frame
         toolbar = NavigationToolbar2Tk(canvas, Right_frame)
         toolbar.update()
         canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+
+        plt.pause(0.1)
 
 
         def on_key_press(event):
@@ -133,51 +133,71 @@ class ResultWindow:
                             # Fatal Python Error: PyEval_RestoreThread: NULL tstate
 
 
-        button = tkinter.Button(master=Right_frame, text="Quit", command=_quit)
-        button.pack(side=tkinter.BOTTOM)
+
+#        self.Log_frame = Frame(Right_frame,highlightbackground=WIN_HIGH_LIGHT, highlightthickness=1,
+#                            bg=LABEL_BACKGROUND, width=700-160, height=50, pady=3)
+        self.Log_frame = Frame(Right_frame,highlightbackground=WIN_HIGH_LIGHT, highlightthickness=1,
+                            bg=LABEL_BACKGROUND, height=50, pady=3)
+        self.Log_frame.pack(side=tkinter.BOTTOM)
+
+        self.logger = Logger(self.Log_frame)
+        (grid_x, grid_y) =self.Log_frame.grid_size() #grid_size return tuple (1,3), when grid is set in row 0
+        # button Quit
+        #self.button = tkinter.Button(master=Right_frame, text="Quit", command=_quit)
+        self.button = tkinter.Button(master=self.Log_frame, text="Quit", command=_quit)
+        #use grid inside the log_frame layout, addit 'Quit' button to the right
+        self.button.grid(row=grid_y-1,column=grid_x+1,padx = 10, sticky="e")
+        # pack theLog_frame layout to use all the width (X)
+        self.Log_frame.pack(fill = tkinter.X, side=tkinter.BOTTOM)
 
 
 
 
     def AddResult(self, value,unit):
         self.output_area.configure(state ='normal')
-        # self.output_area. insert(END,str(value)+" "+unit+'\n','WIN_FORGROUNG')
-        self.output_area. insert(END,"{:.2f}".format(value)+" "+unit+'\n','WIN_FORGROUNG')
+        self.output_area.insert(END,"{:.2f}".format(value)+" "+unit+'\n','WIN_FORGROUNG')
 
         self.output_area.tag_config('ACTION_COLOR', foreground='green')
         self.output_area.see("end")
         self.output_area.configure(state ='disabled')
 
-        #add value to graph_data
-        NextIndex =np.delete(self.graph_data,axis=1,obj=1).size
-        self.graph_data=np.concatenate((self.graph_data, [[NextIndex, value]]), axis=0)
-        #redraw graph
-        x=np.delete(self.graph_data,axis=1,obj=1);
-        y=np.delete(self.graph_data,axis=1,obj=0);
-        ##self.fig.add_subplot(111).plot(x,y)
-        self.fig.add_subplot(111).remove()
-        self.fig.add_subplot(111).plot(x,y)
+        #received value is ploted in scope
+        self.scope.add_point_xy(None, value)
+
+        #log value if logger is enabled
+        self.logger.save(str(value));
+
+    def __del__(self):
+        del self.scope
+        print("destruct ResultWindow")
 
 
 
 
 def main():
+    print("Create Root Window")
     root = Tk()
     root.title('Root Window')
     root.geometry('{}x{}'.format(800, 550))
 
+    print("Create Result Window")
     rWin = ResultWindow(root)
-    rWin.AddResult(12.0,"Ohm")
-    rWin.AddResult(50,"Ω")
-    t = np.arange(0, 3, .1)
-    y = 100*np.sin(2 * np.pi * t)
 
-    for val in y:
-        rWin.AddResult(val,"Ω")
 
+
+    if 1:
+        rWin.AddResult(0.22,"Ohm")
+        rWin.AddResult(0.5,"Ω")
+        t = np.arange(0, 5, .01)
+        y = 1*np.sin(2 * np.pi * t)
+
+
+        for tt in np.arange(0, 5, .05):
+            y = 1*np.sin(2 * np.pi * tt)
+            rWin.AddResult(y,"Ω")
+            time.sleep(0.1)
 
     root.mainloop()
-
 
 if __name__ == '__main__':
     main()

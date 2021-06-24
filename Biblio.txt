@@ -24,15 +24,45 @@ http://tkinter.fdex.eu/doc/frw.html
 https://tutswiki.com/read-write-json-config-file-in-python/
 - Config file en json
 
+import de numpy dans Idle (PC du boulot): 
+- Aller dans le repertoire de Python : C:\Users\legros2\AppData\Local\Programs\Python\Python38-32>
+Executer : python -m pip install numpy
+également ; python.exe -m pip install matplotlib
+
 
 Pour le tracer de courbe : 
 - Importer numpy et matplotlib avec pip.
 C:\Users\Philippe\AppData\Local\Programs\Python\Python38\Scripts\pip.exe install -U numpy
 C:\Users\Philippe\AppData\Local\Programs\Python\Python38\Scripts\pip.exe install -U matplotlib
+
+C:\Users\legros2\AppData\Local\Programs\Python\Python38-32\Scripts>pip list
+Package         Version
+--------------- -------
+cycler          0.10.0
+kiwisolver      1.3.1
+matplotlib      3.4.2
+numpy           1.20.3
+Pillow          8.2.0
+pip             21.1.2
+pyparsing       2.4.7
+python-dateutil 2.8.1
+setuptools      41.2.0
+six             1.16.0
+
+
 bon tutoriel : 
 https://courspython.com/introduction-courbes.html
 Important : redraw sans le module animation...
 https://courspython.com/animation-matplotlib.html#animation-avec-effacement
+Autre code interessant : Oscilloscope : 
+https://matplotlib.org/stable/gallery/animation/strip_chart.html#sphx-glr-gallery-animation-strip-chart-py
+
 
 -Présentation qui semble interessante de matplotlib
 https://www.eduba.school/blog/introduction-a-la-visualisation-de-donnees-avec-python-et-matplotlib
+
+Updating a matplotlib plot is straightforward. Create the data, the plot and update in a loop.
+Setting interactive mode on is essential: plt.ion(). This controls if the figure is redrawn every draw() command. If it is False (the default), then the figure does not update itself.
+
+Update a plot : A l'air très simple...
+https://stackoverflow.com/questions/10944621/dynamically-updating-plot-in-matplotlib
