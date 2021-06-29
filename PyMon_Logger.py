@@ -1,14 +1,16 @@
 #-------------------------------------------------------------------------------
-# Name:        My_Logger
-# Purpose:
+# Name:        PyMon_Logger
+# Purpose:     Object to add a logger feature with enable / disable
+#              and file selection widgets
 #
-# Author:      Philippe
+# Author:      Legros
 #
 # Created:     20/06/2021
-# Copyright:   (c) Philippe 2021
-# Licence:     <your licence>
+# Copyright:   (c) Legros 2021
+# License:     Private Property
 #-------------------------------------------------------------------------------
 
+# graphic interface library
 from tkinter import *
 import tkinter as tk
 
@@ -18,7 +20,7 @@ from datetime import datetime
 #used for file access
 import sys
 
-import json
+#import json
 
 # Used to select log file
 from tkinter.filedialog import askopenfilename
@@ -29,20 +31,7 @@ import pymsgbox
 #import Configuration tools (graphic and saved configuration
 from PyMon_ConfigFile import *
 
-# set default color
-##WIN_FORGROUNG = "#EEE"
-##WIN_HIGH_LIGHT ="#CCC"
-##WIN_BACKGROUND = "#333"
-##TRACE_BACKGROUNG = "#AAA"
-##CMD_BACKGROUND = "#EEE"
-##
-##LABEL_BACKGROUND = WIN_BACKGROUND
-##LABEL_FOREGROUND = WIN_FORGROUNG
-##ENTRY_COLOR     = CMD_BACKGROUND
-##
-##BUTTON_DEF_WIDTH = 10
-##ENTRY_DEF_WIDTH = 15
-
+# create object to share graph configuration
 cg = ConfigGraph()
 
 class Logger():
@@ -57,9 +46,11 @@ class Logger():
         self.FatherFrame = FatherFrame
         self.log_file_name = self.cf.take(self.conf_section,"FileName",section_name+".txt")
         self.log_separator = self.cf.take(self.conf_section,"Separator",";")
+        self.log_value = self.cf.take(self.conf_section,"value",0)
 
         #Create var, label, check button
         self.LogComm = IntVar()
+        self.LogComm.set(self.log_value)
         self.LogCommTxt = StringVar()
         self.LogCommTxt.set('Log file (OFF)')
         self.LogSel = Checkbutton(FatherFrame,
@@ -68,6 +59,11 @@ class Logger():
                             selectcolor = cg.WIN_BACKGROUND,
                             textvariable=self.LogCommTxt,variable=self.LogComm, onvalue=1, offvalue=0,
                             command=self.ToggleLogFile)
+        if self.LogComm.get():
+            self.LogCommTxt.set("Log file (ON:\""+self.log_file_name+"\")")
+        else:
+            self.LogCommTxt.set('Log file (OFF)')
+
         self.LogSel.grid(row=0,column=0,padx = 10, columnspan=1, sticky="w")
 
         #button to change file name
@@ -89,6 +85,7 @@ class Logger():
             self.LogCommTxt.set("Log file (ON:\""+self.log_file_name+"\")")
         else:
             self.LogCommTxt.set('Log file (OFF)')
+        self.cf.put(self.conf_section,"value",self.LogComm.get())
 
 
     # Logger file selection
@@ -121,6 +118,7 @@ class Logger():
 
 
 
+# main is a unitary test (+ demonstration) features
 def main():
     root = Tk()
     root.title('Unitary test for MyLogger')

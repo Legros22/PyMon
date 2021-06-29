@@ -1,57 +1,51 @@
 #-------------------------------------------------------------------------------
-# Name:        module1
-# Purpose:
+# Name:        PyMon_ResultWindow V4
+# Purpose:     Object ResultWindow to create a GUI for meaurement display :
+#              Array of value, graphical display, log of measurements.
 #
-# Author:      Philippe
+# Author:      Legros
 #
-# Created:     11/05/2021
-# Copyright:   (c) Philippe 2021
-# Licence:     <your licence>
+# Created:     20/06/2021
+# Copyright:   (c) Legros 2021
+# License:     Private Property
 #-------------------------------------------------------------------------------
 
+# graphic interface library
 from tkinter import *
 from tkinter import ttk
 from tkinter import scrolledtext
-
 import tkinter as tk
-
 import tkinter
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Simplifier les imports de tkinter
 
+# import for displaying a plot (from matplotlib) in tkinter
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
 # Implement the default Matplotlib key bindings.
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+
+#used for delay (in main only)
 import time
 
+#used for math vector generation (in main only)
 import numpy as np
 
+#import scope object
 from MyScope_V2 import Scope
 
-from queue import Queue
-
+#import logger object
 from PyMon_Logger import Logger
 
-
-# set default color
-WIN_FORGROUNG = "#EEE"
-WIN_HIGH_LIGHT ="#CCC"
-WIN_BACKGROUND = "#333"
-TRACE_BACKGROUNG = "#AAA"
-CMD_BACKGROUND = "#EEE"
-
-LABEL_BACKGROUND = WIN_BACKGROUND
-LABEL_FOREGROUND = WIN_FORGROUNG
-ENTRY_COLOR     = CMD_BACKGROUND
-
-BUTTON_DEF_WIDTH = 10
-ENTRY_DEF_WIDTH = 15
+#import Configuration tools (graphic and saved configuration
+from PyMon_ConfigFile import *
+# create object to share graph configuration
+cg = ConfigGraph()
 
 
-plt.ion()
-
-
+# Class to create a GUI for meaurement display :
+# Array of value, graphical display, log of measurements.
 class ResultWindow:
 
     def __init__(self,rootWindow):
@@ -60,16 +54,16 @@ class ResultWindow:
         win.geometry('{}x{}'.format(700, 700))
 
 
-        left_frame = Frame(win,highlightbackground=WIN_HIGH_LIGHT, highlightthickness=1,
-                            bg=LABEL_BACKGROUND, width=160, height=50, pady=3)
+        left_frame = Frame(win,highlightbackground=cg.WIN_HIGH_LIGHT, highlightthickness=1,
+                            bg=cg.LABEL_BACKGROUND, width=160, height=50, pady=3)
         left_frame.grid(row=0, column=0, sticky="nw")
 
         # create all of the main containers
         win.grid_columnconfigure(1, weight=1)
         win.grid_rowconfigure(0, weight=1)
 
-        Right_frame = Frame(win, bg=WIN_BACKGROUND,
-                            highlightbackground=WIN_HIGH_LIGHT, highlightthickness=1,
+        Right_frame = Frame(win, bg=cg.WIN_BACKGROUND,
+                            highlightbackground=cg.WIN_HIGH_LIGHT, highlightthickness=1,
                             width=300, height=50, pady=3)
         Right_frame.grid(row=0, column=1,sticky="nsew")
         Right_frame.grid_columnconfigure(0, weight=1)
@@ -80,7 +74,7 @@ class ResultWindow:
         self.output_area = scrolledtext.ScrolledText(left_frame,
                                               width = 15,
                                               height = 20,
-                                              bg = TRACE_BACKGROUNG,
+                                              bg = cg.TRACE_BACKGROUND,
                                               font = ("Courier",10))
 
         self.output_area.grid(row=0, column=0, columnspan =2, pady = 15, padx = 10, sticky="nsew")
@@ -90,21 +84,11 @@ class ResultWindow:
         # Output value graphical window
         # ------------------------------
 
-        # Add logger object
-##        Log_frame = Frame(Right_frame,highlightbackground=WIN_HIGH_LIGHT, highlightthickness=1,
-##                            bg=LABEL_BACKGROUND, width=160, height=50, pady=3)
-##        Log_frame.grid(row=0, column=0, sticky="n")
-
-##        self.logger = Logger(Log_frame)
-##        self.logger = Logger(Right_frame)
-
-##        Fig_frame = Frame(Right_frame,highlightbackground=WIN_HIGH_LIGHT, highlightthickness=1,
-##                            bg=LABEL_BACKGROUND, pady=3)
-##        Fig_frame.grid(row=1, column=0, sticky="n")
-
+        #create the plot
         self.fig, self.ax = plt.subplots()
 
-        self.scope = Scope(self.fig, self.ax, max_points = 20)   #create Scope object
+        #create the Scope object to diplay measurement in plot
+        self.scope = Scope(self.fig, self.ax, max_points = 100)
 
         # Set self.fig in the Right_frame
         canvas = FigureCanvasTkAgg(self.fig, master=Right_frame)  # A tk.DrawingArea.
@@ -133,11 +117,9 @@ class ResultWindow:
                             # Fatal Python Error: PyEval_RestoreThread: NULL tstate
 
 
-
-#        self.Log_frame = Frame(Right_frame,highlightbackground=WIN_HIGH_LIGHT, highlightthickness=1,
-#                            bg=LABEL_BACKGROUND, width=700-160, height=50, pady=3)
-        self.Log_frame = Frame(Right_frame,highlightbackground=WIN_HIGH_LIGHT, highlightthickness=1,
-                            bg=LABEL_BACKGROUND, height=50, pady=3)
+        # Add logger object below the scope.
+        self.Log_frame = Frame(Right_frame,highlightbackground=cg.WIN_HIGH_LIGHT, highlightthickness=1,
+                            bg=cg.LABEL_BACKGROUND, height=50, pady=3)
         self.Log_frame.pack(side=tkinter.BOTTOM)
 
         self.logger = Logger(self.Log_frame)
@@ -152,10 +134,10 @@ class ResultWindow:
 
 
 
-
+    #method to add a value to the result window. value is float, unit is text.
     def AddResult(self, value,unit):
         self.output_area.configure(state ='normal')
-        self.output_area.insert(END,"{:.2f}".format(value)+" "+unit+'\n','WIN_FORGROUNG')
+        self.output_area.insert(END,"{:.2f}".format(value)+" "+unit+'\n','cg.WIN_FORGROUNG')
 
         self.output_area.tag_config('ACTION_COLOR', foreground='green')
         self.output_area.see("end")
@@ -173,7 +155,7 @@ class ResultWindow:
 
 
 
-
+# main is a unitary test (+ demonstration) features
 def main():
     print("Create Root Window")
     root = Tk()
@@ -182,8 +164,6 @@ def main():
 
     print("Create Result Window")
     rWin = ResultWindow(root)
-
-
 
     if 1:
         rWin.AddResult(0.22,"Ohm")

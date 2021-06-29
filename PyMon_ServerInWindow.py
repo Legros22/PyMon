@@ -295,7 +295,7 @@ ConnStatus_label = Label(left_frame, textvariable=ConnStatus_txt,background = LA
 ConnStatus_txt.set("----")
 ConnStatus_label.config(fg="black", font='Helvetica 10 bold')
 ConnStatus = 1
-Conn_bouton = Button(left_frame, text="Connect", command=changeConnStatus)
+Conn_bouton = Button(left_frame, text="Start/Stop", command=changeConnStatus)
 Conn_bouton["fg"] = "black"
 
 

@@ -1,26 +1,33 @@
+
 #-------------------------------------------------------------------------------
-# Name:        module1
-# Purpose:
+# Name:        Scope
+# Purpose:     Object display measurement points as long as they are measured
 #
-# Author:      Philippe
+# Author:      Legros
 #
 # Created:     20/06/2021
-# Copyright:   (c) Philippe 2021
-# Licence:     <your licence>
+# Copyright:   (c) Legros 2021
+# License:     Private Property
+#-------------------------------------------------------------------------------
+
 #-------------------------------------------------------------------------------
 # Inspiration : https://stackoverflow.com/questions/10944621/dynamically-updating-plot-in-matplotlib
 #-------------------------------------------------------------------------------
-import numpy as np
-import time
+#used to plot graphs
 import matplotlib.pyplot as plt
 
+#used for math vector generation (in main only)
+import numpy as np
+#used for delay (in main only)
+import time
+
+#enable interractive mode for plot
 plt.ion()
 
 class Scope():
 
-    def __init__(self, fig, ax, max_points = 10, dt=1.0):
-    #def on_launch(self):
-        #Suppose we know the x range
+    def __init__(self, fig, ax, max_points = 50, dt=1.0):
+         #Suppose we know the x range
         self.min_x = 0
         self.max_x = 10
         self.dt = dt    # default Delay between 2 points
@@ -64,6 +71,7 @@ class Scope():
             self.xdata.append(x)
         #set y, pass None if not used
         self.ydata.append(y)
+        #delete first point if the max number of points to plot is reached.
         if (len(self.xdata) > self.max_points):
             self.xdata.pop(0)
             self.ydata.pop(0)
@@ -71,18 +79,16 @@ class Scope():
 
 
 
+# main is a unitary test (+ demonstration) features
 
 def main():
-    print("debut")
     fig, ax = plt.subplots()
     scope = Scope(fig, ax)
     for x in np.arange(0,20,0.5):
         y = np.exp(-x**2)+10*np.exp(-(x-7)**2)
         scope.add_point_xy(None, y)
         time.sleep(0.25)
-    print("fin")
 
-    #d()
 
 if __name__ == '__main__':
     main()

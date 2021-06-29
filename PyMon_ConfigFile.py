@@ -1,12 +1,12 @@
 #-------------------------------------------------------------------------------
-# Name:        Config
-# Purpose:
+# Name:        PyMon_ConfigFile
+# Purpose:     Object to save / read configuration parameter in json file
 #
-# Author:      Philippe
+# Author:      Legros
 #
 # Created:     22/06/2021
-# Copyright:   (c) Philippe 2021
-# Licence:     <your licence>
+# Copyright:   (c) Legros 2021
+# License:     Private Property
 #-------------------------------------------------------------------------------
 
 import json
@@ -24,7 +24,7 @@ class ConfigGraph():
         self.WIN_FOREGROUND = "#EEE"
         self.WIN_HIGH_LIGHT ="#CCC"
         self.WIN_BACKGROUND = "#333"
-        self.TRACE_BACKGROUNG = "#AAA"
+        self.TRACE_BACKGROUND = "#AAA"
         self.CMD_BACKGROUND = "#EEE"
 
         self.LABEL_BACKGROUND = self.WIN_BACKGROUND
@@ -111,6 +111,7 @@ class ConfigFile():
 
 
 
+# main is a unitary test (+ demonstration) features
 
 def main():
     cf=ConfigFile()

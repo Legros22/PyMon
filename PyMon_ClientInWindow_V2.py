@@ -21,8 +21,14 @@ from datetime import datetime
 #used for delay (in main only)
 import time
 
-#no more used, but it could back...
-#from queue import Queue
+
+#used to display a popup telling the file is cleared
+import pymsgbox
+
+#queue are used to give access to the message received from network
+# (more than only printing on the monitor
+from multiprocessing import Queue
+queue_in = Queue()
 
 #used for network interface
 from threading import Thread
@@ -37,178 +43,27 @@ import sys
 # ================ > should be deleted
 import json
 
+#import regular expression tool to analyse ZIOT response
+import re
+
+#import logger object
+from PyMon_Logger import Logger
+
+#import result window to show measurements
+from PyMon_ResultWindow_V4 import ResultWindow
+
 #import Configuration tools (graphic and saved configuration
 from PyMon_ConfigFile import *
 # create object to share graph configuration
 cg = ConfigGraph()
-
+cf = ConfigFile()
+CF_ETHERNET_SECTION="Ethernet"
 
 
 root = Tk()
 root.title('PyMon CLient (ZIOT)')
-root.geometry('{}x{}'.format(800, 550))
+root.geometry('{}x{}'.format(1300, 550))
 
-### set default color
-##WIN_FORGROUNG = "#EEE"
-##WIN_HIGH_LIGHT ="#CCC"
-##WIN_BACKGROUND = "#333"
-##TRACE_BACKGROUND = "#AAA"
-##CMD_BACKGROUND = "#EEE"
-##
-##LABEL_BACKGROUND = WIN_BACKGROUND
-##LABEL_FOREGROUND = WIN_FORGROUNG
-##ENTRY_COLOR     = CMD_BACKGROUND
-##
-##BUTTON_DEF_WIDTH = 10
-##ENTRY_DEF_WIDTH = 15
-
-## Manage software config in json file
-## ------------------------------------
-
-def Load_Settings():
-    global ADDRESS, MASK, PORT, log_file_name, log_separator
-
-    print(" ========= Load_Settings() not yet working =================")
-    try:
-        with open("MonZiot.json", "r") as jsonfile:
-            ConfData = json.load(jsonfile)
-            print("Read configuration successful")
-    except:
-        ConfData={}
-
-
-    Update_ConfData = False
-
-    if "Ethernet" in ConfData:
-    #-------------------------
-        print(" ** Ethernet section")
-    else:
-        ConfData["Ethernet"]={}
-        Update_ConfData = True
-        print("create Ethernet section ")
-
-    if "ADDRESS" in ConfData["Ethernet"]:
-        ADDRESS = ConfData["Ethernet"]["ADDRESS"]
-        print("ADDR = "+ADDRESS)
-    else:
-        ADDRESS = "192.168.1.11"
-        ConfData["Ethernet"]["ADDRESS"]=ADDRESS
-        Update_ConfData = True
-        print("create ADDR = "+ADDRESS)
-
-    if "MASK" in ConfData["Ethernet"]:
-        MASK = ConfData["Ethernet"]["MASK"]
-        print("MASK = "+MASK)
-    else:
-        MASK = "255.255.0.0"
-        ConfData["Ethernet"]["MASK"]=MASK
-        Update_ConfData = True
-        print("create MASK = "+MASK)
-
-    if "PORT" in ConfData["Ethernet"]:
-        PORT = int(ConfData["Ethernet"]["PORT"])
-        Update_ConfData = True
-        print("PORT = "+str(PORT))
-    else:
-        PORT = 6789
-        ConfData["Ethernet"]["PORT"]=str(PORT)
-        print("create PORT = "+str(PORT))
-
-    if "Logger" in ConfData:
-    #-------------------------
-        print(" ** Logger section")
-    else:
-        ConfData["Logger"]={}
-        Update_ConfData = True
-        print("create Logger section ")
-
-    if "LogFileName" in ConfData["Logger"]:
-        log_file_name = ConfData["Logger"]["LogFileName"]
-        print("LogFileName = "+log_file_name)
-    else:
-        log_file_name = "MyLog.txt"
-        ConfData["Logger"]["LogFileName"]=log_file_name
-        Update_ConfData = True
-        print("create LogFileName = "+log_file_name)
-
-    if "LogDelimiter" in ConfData["Logger"]:
-        log_separator = ConfData["Logger"]["LogDelimiter"]
-        print("LogDelimiter = "+log_separator)
-    else:
-        log_separator = ";"
-        ConfData["Logger"]["LogDelimiter"]=log_separator
-        Update_ConfData = True
-        print("create LogDelimiter = "+log_separator)
-
-
-    if Update_ConfData:
-        MyJSON = json.dumps(ConfData, indent=4, sort_keys=True)
-        with open("MonZiot.json", "w") as jsonfile:
-            jsonfile.write(MyJSON)
-            print("ReWrite configuration successful")
-
-
-
-
-
-def save_Settings():
-    global IP_StrVar, MASK_StrVar, Port_StrVar, log_file_name, log_separator
-    global ConfData
-
-    print(" ========= save_Settings() not yet working =================")
-
-    try:
-        with open("MonZiot.json", "r") as jsonfile:
-            ConfData = json.load(jsonfile)
-            print("Read successful")
-    except:
-        ConfData={}
-
-
-    if "Ethernet" in ConfData:
-    #-------------------------
-        print(" ** Ethernet y est")
-    else:
-        ConfData["Ethernet"]={}
-        print("create Ethernet section ")
-
-    ConfData["Ethernet"]["ADDRESS"] = IP_StrVar.get()
-    print("ADDR = "+IP_StrVar.get())
-
-    ConfData["Ethernet"]["MASK"]=MASK_StrVar.get()
-    print("MASK = "+MASK_StrVar.get())
-
-    ConfData["Ethernet"]["PORT"]=str(Port_StrVar.get())
-    print("PORT = "+str(Port_StrVar.get()))
-
-    if "Logger" in ConfData:
-    #-------------------------
-        print(" ** Logger y est")
-    else:
-        ConfData["Logger"]={}
-        print("Logger section ")
-
-    ConfData["Logger"]["LogFileName"]=log_file_name
-    print("LogFileName = "+log_file_name)
-
-    ConfData["Logger"]["LogDelimiter"]=log_separator
-    print("LogDelimiter = "+log_separator)
-
-
-    MyJSON = json.dumps(ConfData, indent=4, sort_keys=True)
-    with open("MonZiot.json", "w") as jsonfile:
-        jsonfile.write(MyJSON)
-        print("ReWrite successful")
-
-
-
-
-
-def MonLog(TraceLine):
-    now = datetime.now()
-    timeStamp = now.strftime("%d/%m/%Y"+log_separator+"%H:%M:%S")
-    with open(log_file_name, 'a') as LogFile:  # Use file to refer to the file object
-        LogFile.write(timeStamp+log_separator+TraceLine+'\n')
 
 
 
@@ -230,27 +85,13 @@ Right_frame.grid_rowconfigure(1, weight=1)
 # create the widgets for right frame
 # =====================================
 
+#create and place logger object
+Log_frame = Frame(Right_frame,highlightbackground=cg.WIN_HIGH_LIGHT, highlightthickness=1,
+                            bg=cg.LABEL_BACKGROUND, height=50, pady=3)
+Log_frame.grid(row=0,column=0,padx = 10, columnspan=2, sticky="w")
+logger = Logger(Log_frame, "Monitor")
 
 
-# Logger selection
-# --------------------
-def ToggleLogFile ():
-    if LogComm.get():
-        LogCommTxt.set("Log file (ON:\""+log_file_name+"\")")
-    else:
-        LogCommTxt.set('Log file (OFF)')
-
-LogComm = IntVar()
-LogCommTxt = StringVar()
-LogCommTxt.set('Log file (OFF)')
-LogSel = Checkbutton(Right_frame,
-                    fg = cg.CMD_BACKGROUND, bg = cg.WIN_BACKGROUND,
-                    activebackground=cg.WIN_BACKGROUND, activeforeground=cg.CMD_BACKGROUND,
-                    selectcolor = cg.WIN_BACKGROUND,
-                    #selectcolor = TRACE_BACKGROUND,
-                    textvariable=LogCommTxt,variable=LogComm, onvalue=1, offvalue=0,
-                    command=ToggleLogFile)
-LogSel.grid(row=0,column=0,padx = 10, columnspan=2, sticky="w")
 
 
 # Output Trace Window
@@ -268,20 +109,20 @@ output_area.grid_rowconfigure(0, weight=1)
 
 # input enter Window
 # --------------------
-
-#IP_label = Label(Right_frame, text='Manual command :',background = LABEL_BACKGROUND)
 IP_label = Label(Right_frame, fg = cg.WIN_FOREGROUND, bg = cg.WIN_BACKGROUND, text='Manual command :')
 IP_label.grid(row=3, column=0,pady = 0, padx = 10, sticky="nw")
 
 
 
 def input_area_enter(event):
-    global LogComm
+#    global LogComm
     CmdLine = input_area.get(1.0, END) # input cmd from read
     CmdLine = CmdLine.replace("\n","") # supress \n for start of line
     input_area.delete(1.0,END)         # delete input zone
     # Output cmd to TRACE
-    output_send(CmdLine, MSG_TYPE_SEND)
+##    output_send("{"+CmdLine+"}", MSG_TYPE_SEND)
+    output_queue.put_nowait(("{"+CmdLine+"}", MSG_TYPE_SEND))
+
     MyTCP_SendToServer(CmdLine)
 
 input_area = scrolledtext.ScrolledText(Right_frame,
@@ -303,8 +144,7 @@ MSG_TYPE_RECEIVE = 2
 
 # Output cmd to TRACE
 def output_send(msg, msg_type):
-    if LogComm.get():
-        MonLog(msg)                    #log the cmd received
+    logger.save(msg)               #log the cmd received
     if msg_type==MSG_TYPE_ACTION:
         output_area.configure(state ='normal')
         output_area. insert(END,"#"+msg+'\n','ACTION_COLOR')
@@ -330,10 +170,26 @@ def output_send(msg, msg_type):
         output_area.see("end")
         output_area.configure(state ='disabled')
 
+## =============================================================
+## =============================================================
+## =============================================================
+
+output_queue = Queue()
+
+def output_pull_queue():
+    while (1):
+        msg, msg_type =output_queue.get(block=True, timeout=None)
+        output_send(msg,msg_type)
 
 
+Thread_output = Thread(target = output_pull_queue, args =())
+Thread_output.start()
 
+output_queue.put_nowait(("Mon message de sortie",MSG_TYPE_ACTION))
 
+## =============================================================
+## =============================================================
+## =============================================================
 
 
 # --------------- TCP client mamagement -------------------
@@ -344,11 +200,14 @@ ClientState = 0
 
 def ProcessReveivedMsg(client):
     try:
-        output_send('in ProcessReveivedMsg()',MSG_TYPE_ACTION)
+##        output_send('in ProcessReveivedMsg()',MSG_TYPE_ACTION)
+        output_queue.put_nowait(('in ProcessReveivedMsg()',MSG_TYPE_ACTION))
+
         while 1:
             MyFrame = client.recv(1024)
             if not MyFrame:
-                output_send('Client quit',MSG_TYPE_ACTION)
+##                output_send('Client quit',MSG_TYPE_ACTION)
+                output_queue.put_nowait(('Client quit',MSG_TYPE_ACTION))
                 break #quit while
             else:
                 #convert the "byte" received to a string
@@ -360,7 +219,11 @@ def ProcessReveivedMsg(client):
                 #(an empty string always follow a string...)
                 if (len(FrameStr)!=0):
                     #display the received msg
-                    output_send(FrameStr,MSG_TYPE_RECEIVE)
+##                    output_send(FrameStr,MSG_TYPE_RECEIVE)
+                    output_queue.put_nowait((FrameStr,MSG_TYPE_RECEIVE))
+                    #push reception to the queue_in
+                    queue_in.put_nowait(FrameStr)
+
     except:
         MyEnd = 0
         # except is used to catch the error when client.rev is waiting a message
@@ -384,37 +247,30 @@ def MyTcpClient(in_q):
                 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 client.connect((IP_StrVar.get(),int(Port_StrVar.get())))
                 txt='Connection to '+IP_StrVar.get()+', port='+Port_StrVar.get()
-                output_send(txt,MSG_TYPE_ACTION)
+##                output_send(txt,MSG_TYPE_ACTION)
+                output_queue.put_nowait((txt,MSG_TYPE_ACTION))
                 ClientState = 1
-##                #Thread_ProcessReveivedMsg = Thread(target = ProcessReveivedMsg, args =(client, ))
-##                #Thread_ProcessReveivedMsg.start()
-##                #output_send('Receiving thread is started',MSG_TYPE_ACTION)
 
         #if server is enabled, check if it has to be stoped
         if ClientState==1:
             if (ServerRequest==0):  # Request server connexion
-                output_send('Disconnect',MSG_TYPE_ACTION)
+##                output_send('Disconnect',MSG_TYPE_ACTION)
+                output_queue.put_nowait(('Disconnect',MSG_TYPE_ACTION))
                 client.close()
                 #note : This will cause "ProcessReveivedMsg" exception
 ##                Thread_ProcessReveivedMsg.join()
                 ClientState = 0
 
-##        #if server is supposed to be launched, check if client manager is still alive
-##        if ClientState==1:
-##            if (Thread_ProcessReveivedMsg.is_alive()==False):
-##                output_send('thread managing Client is dead',MSG_TYPE_ACTION)
-##                client.close()
-##                server.close()
-##                ClientState = 0
-##                ServerRequest = 1
         time.sleep(1)
         ii += 1
-        output_send(str(ii),MSG_TYPE_SEND)
-        if(ClientState==1):
-            client.send(('hello +'+str(ii)).encode())
+##        output_send(str(ii),MSG_TYPE_SEND)
+        output_queue.put_nowait((str(ii),MSG_TYPE_SEND))
+
+##        if(ClientState==1):
+##            client.send(('hello +'+str(ii)).encode())
 
 
-##q = Queue()
+
 ##Thread_MyTcpClient = Thread(target = MyTcpClient, args =(q, ))
 ##Thread_MyTcpClient.start()
 
@@ -430,19 +286,19 @@ def MyTCP_ConnectToServer():
         #client connection to server
         client.connect((IP_StrVar.get(),int(Port_StrVar.get())))
         txt='Connection to '+IP_StrVar.get()+', port='+Port_StrVar.get()
-        output_send(txt,MSG_TYPE_ACTION)
+        output_queue.put_nowait((txt,MSG_TYPE_ACTION))
         ClientState = 1
         #Launch thread to receive data
         Thread_ProcessReveivedMsg = Thread(target = ProcessReveivedMsg, args =(client, ))
         Thread_ProcessReveivedMsg.start()
-        output_send('Receiving thread is started',MSG_TYPE_ACTION)
+        output_queue.put_nowait(('Receiving thread is started',MSG_TYPE_ACTION))
 
         #widget management
         ConnStatus_txt.set("Connected")
         ConnStatus_label.config(fg="green", font='Helvetica 11 bold')
 
     except:
-        output_send("Server refuse connection",MSG_TYPE_ACTION)
+        output_queue.put_nowait(("Server refuse connection",MSG_TYPE_ACTION))
         ClientState = 0
         #widget management
         ConnStatus_txt.set("Disconnected")
@@ -453,7 +309,7 @@ def MyTCP_DisConnectToServer():
     global client
     try:
         #manage client connection to the server
-        output_send('Disconnect',MSG_TYPE_ACTION)
+        output_queue.put_nowait(('Disconnect',MSG_TYPE_ACTION))
         client.close()
         #note : This will cause "ProcessReveivedMsg" exception
         Thread_ProcessReveivedMsg.join()
@@ -472,10 +328,10 @@ def MyTCP_SendToServer(strMessage):
         try:
             client.send(strMessage.encode())
         except:
-            output_send("Can't send to Server",MSG_TYPE_ACTION)
+            output_queue.put_nowait(("Can't send to Server",MSG_TYPE_ACTION))
             MyTCP_DisConnectToServer()
     else:
-        output_send("Connect to Server before to send message.",MSG_TYPE_ACTION)
+        output_queue.put_nowait(("Connect to Server before to send message.",MSG_TYPE_ACTION))
 
 # -------------- Connexion widget --------------------
 
@@ -484,46 +340,118 @@ def changeConnStatus():
     global ClientState
     if ClientState==0:
         MyTCP_ConnectToServer()
-         #q.put(ConnStatus)
-        #ConnStatus = 1
     elif ClientState==1:
 
-        #ConnStatus_txt.set("Disconnected")
-        #ConnStatus_label.config(fg="black", font='Helvetica 10')
-        #q.put(ConnStatus)
         MyTCP_DisConnectToServer()
-        #ConnStatus = 0
     else: #Default state
         ConnStatus_txt.set("----")
         ConnStatus_label.config(fg="black", font='Helvetica 10 bold')
         ClientState==0
-        #ConnStatus = 0
-        #ClientState = 0
-        #q.put(ConnStatus)
 
 
 
 # ---------- Popup Window for Rf Measurement -------------
 
-def Rf_create():
-    win = Toplevel(root)
+def ZIOT_SendReceive(msg, MaxDelay_ms):
+    # if a message has to be sent.
+    if msg!=None:
+        output_queue.put_nowait((msg, MSG_TYPE_SEND))
+        MyTCP_SendToServer(msg)
+    # wait reception of a message with a max delay.
+    # return None if no message is received before delay.
+    try:
+        response = queue_in.get(block=True, timeout=MaxDelay_ms/1000)
+    except:
+        response = None
+    return response
+
+def Rf_create(save):
+
+    #analyse response with regular expression
+    ##   /RF\s*:\s*([0-9]*\.[0-9]*)/gm
+    # First regular expression to identify line "RF    : 3135.10742 Ohm"
+    p_line = re.compile('RF\s*:\s*([0-9]*\.[0-9]*)')
+    # second regular expression to identify line "3135.10742"
+    p_val  = re.compile('[0-9]*\.[0-9]*')
+
+    #create result window
+    rWin = ResultWindow(root)
+
+    #empty reception queue
+    while queue_in.empty()==False:
+        queue_in.get_nowait()
+
+    #repeat 10 Rf estimation
+    for i in range(1,100):
+        print("=========== "+str(i)+" ===========")
+        #send command 'S2' to request Rf measurement.
+        response = ZIOT_SendReceive('S2', 2000)
+        if response==None:
+            output_queue.put_nowait(("Response expected, not received", MSG_TYPE_SEND))
+            return
+        if (save):
+            response = ZIOT_SendReceive('1', 3000)
+        else:
+            response = ZIOT_SendReceive('0', 3000)
+
+        while response!=None:
+            m = p_line.search(response)
+            if m!=None:
+                #print(m)
+                #print(m.group())
+                m = p_val.search(response)
+                if m!=None:
+                    #print(m)
+                    print(m.group())
+                    rWin.AddResult(float(m.group()),"Ω")
+
+            #ask for next answer.
+            response = ZIOT_SendReceive(None, 1000)
 
 
-# ---------- Load setting at init -------------
 
-Load_Settings()
 
+## pour récuperer la valeur de resistance dans : T1[Z,|Z|,RF,Lm], T2[|U|,U_RMS]  : 23.65427  + 270.62933 j : 271.66110 : 3119.93384 Ohm : 0.02370 H : 0.15680 V : 0.45808 V
+#  /T1\[Z,\|Z\|,RF,Lm\], T2\[\|U\|,U_RMS\] (\d|\s|\.|\+|j)*:(\d|\s|\.|\+|j)*:(\d|\s|\.|\+|j)*: ([0-9]*\.[0-9]*)/gm
+
+def Rf_createSave():
+    Rf_create(True)
+
+def Rf_createNotSave():
+    Rf_create(False)
+
+# ---------- Manage IP settings -------------
+
+#Load settings in configuration file
+ADDRESS = cf.take(CF_ETHERNET_SECTION,"addrIPv4","192.168.1.11")
+MASK    = cf.take(CF_ETHERNET_SECTION,"maskIPv4","255.25.0.0")
+PORT    = cf.take(CF_ETHERNET_SECTION,"portIPv4",4101)
+
+#callback to save settings in configuration file when Entry is modified
+def IP_StrVar_modified(*args):
+    cf.put(CF_ETHERNET_SECTION,"addrIPv4",IP_StrVar.get())
+def MASK_StrVar_modified(*args):
+    cf.put(CF_ETHERNET_SECTION,"maskIPv4",MASK_StrVar.get())
+def Port_StrVar_modified(*args):
+    try:
+        cf.put(CF_ETHERNET_SECTION,"portIPv4",int(Port_StrVar.get()))
+    except:
+        cf.put(CF_ETHERNET_SECTION,"portIPv4",4101)
 # -------------- IP widget --------------------
-#ADDRESS = '192.168.1.52'
-#PORT = 6789
+
 NetworkTitle_label = Label(left_frame, text='Network',background = cg.LABEL_BACKGROUND, fg = cg.LABEL_FOREGROUND)
 IP_StrVar   = StringVar(left_frame, value=ADDRESS)
+IP_StrVar.trace_add("write",IP_StrVar_modified)
 IP_label    = Label(left_frame, text='IP address :',background = cg.LABEL_BACKGROUND, fg = cg.LABEL_FOREGROUND)
 IP_entry    = Entry(left_frame, textvariable = IP_StrVar, width = cg.ENTRY_DEF_WIDTH, background=cg.ENTRY_COLOR);
+
 MASK_StrVar = StringVar(left_frame, value=MASK)
+MASK_StrVar.trace_add("write",MASK_StrVar_modified)
 MASK_label  = Label(left_frame, text='IP mask : ',background = cg.LABEL_BACKGROUND, fg = cg.LABEL_FOREGROUND)
 MASK_entry  = Entry(left_frame, textvariable = MASK_StrVar, width = cg.ENTRY_DEF_WIDTH, background=cg.ENTRY_COLOR)
+
 Port_StrVar = StringVar(left_frame, value=str(PORT))
+Port_StrVar.trace_add("write",Port_StrVar_modified)
 Port_label  =  Label(left_frame, text='IP port : ',background = cg.LABEL_BACKGROUND, fg = cg.LABEL_FOREGROUND)
 Port_entry  =  Entry(left_frame, textvariable = Port_StrVar, width = cg.ENTRY_DEF_WIDTH, background=cg.ENTRY_COLOR);
 
@@ -552,6 +480,13 @@ Port_entry.grid(row=6, column=1, padx=5)
 
 
 # -------------- Config Widget --------------------
+
+def save_Settings():
+    ...
+
+def Load_Settings():
+    ...
+
 ConfTitle_label    = Label(left_frame, text='Configuration',background = cg.LABEL_BACKGROUND, fg = cg.LABEL_FOREGROUND)
 Load_bouton        = Button(left_frame, text="Load JSON", width = cg.BUTTON_DEF_WIDTH, command=Load_Settings)
 Load_bouton["fg"]  = "black"
@@ -566,13 +501,16 @@ Save_bouton.grid(row=8, column=1, padx=10)
 
 # -------------- Measure Rf --------------------
 MeasRfTitle_label    = Label(left_frame, text='Measure Rf',background = cg.LABEL_BACKGROUND, fg = cg.LABEL_FOREGROUND)
-MeasRf_bouton        = Button(left_frame, text="Start", width = cg.BUTTON_DEF_WIDTH, command=Rf_create)
-MeasRf_bouton["fg"]  = "black"
-
 MeasRfTitle_label.config(font='Helvetica 10 bold')
-
 MeasRfTitle_label.grid(row=9, column=0, columnspan =2, pady=10)
+
+MeasRf_bouton        = Button(left_frame, text="Start", width = cg.BUTTON_DEF_WIDTH, command=Rf_createNotSave)
+MeasRf_bouton["fg"]  = "black"
 MeasRf_bouton.grid(row=10, column=0, padx=10)
+
+SaveRf_bouton        = Button(left_frame, text="Start & Save", width = cg.BUTTON_DEF_WIDTH, command=Rf_createSave)
+SaveRf_bouton["fg"]  = "black"
+SaveRf_bouton.grid(row=10, column=1, padx=10)
 
 
 
